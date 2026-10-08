@@ -1,0 +1,1016 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>英文跟读打字台</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap">
+<style>
+/* Layout: one narrow working column. Tabs switch between four benches (listen, analyse, type the article, drill words);
+   the typing line sits on a sunken "platen" and is the one loud element. */
+:root{
+  --bg:#ECEFF4; --surface:#F9FAFC; --sunk:#E0E5EE; --ink:#151A26; --muted:#586174; --line:#CBD2DE;
+  --accent:#2B45C9; --accent-ink:#FFFFFF; --accent-soft:#DCE2FB;
+  --ok:#11743F; --ok-soft:#D3EDDD; --bad:#BE3227; --bad-soft:#F8D8D3; --mark:#FFE389; --warn:#93570A;
+  --read:"Literata",Georgia,"Songti SC",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --ui:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10131A; --surface:#181D27; --sunk:#0B0E14; --ink:#E7EAF1; --muted:#949DB0; --line:#2C3443;
+  --accent:#9BACFF; --accent-ink:#0D1230; --accent-soft:#232C57;
+  --ok:#58CB92; --ok-soft:#143524; --bad:#FF8676; --bad-soft:#48201C; --mark:#5C4B12; --warn:#F0B455; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10131A; --surface:#181D27; --sunk:#0B0E14; --ink:#E7EAF1; --muted:#949DB0; --line:#2C3443;
+  --accent:#9BACFF; --accent-ink:#0D1230; --accent-soft:#232C57;
+  --ok:#58CB92; --ok-soft:#143524; --bad:#FF8676; --bad-soft:#48201C; --mark:#5C4B12; --warn:#F0B455; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--ui)}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;display:flex;flex-direction:column;gap:18px}
+h1{font-size:1.5rem;line-height:1.2;margin:0;letter-spacing:.01em}
+h2{font-size:1rem;margin:0}
+p{margin:0}
+.top{display:flex;gap:12px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
+.sub{color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:.87rem}
+
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.quiet{background:transparent}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 auto;min-width:0}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:9px 14px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;font-weight:600}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.bench{display:flex;flex-direction:column;gap:16px}
+
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px 20px}
+textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;resize:vertical}
+#article-input{min-height:190px;font-family:var(--read);font-size:1rem;line-height:1.7}
+select,input[type=text]{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 9px;max-width:100%}
+input[type=range]{accent-color:var(--accent);width:120px}
+
+/* reader */
+#reader{font-family:var(--read);font-size:1.16rem;line-height:1.95;max-width:66ch;display:flex;flex-direction:column;gap:.9em}
+.sent{border-radius:3px;padding:2px 0;cursor:pointer}
+.sent.on{background:var(--mark)}
+.w:hover{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:4px}
+.w.pick{background:var(--accent-soft);border-radius:3px;box-shadow:0 0 0 2px var(--accent-soft)}
+#wordbar{min-height:44px;border-top:1px dashed var(--line);padding-top:12px;margin-top:14px}
+.wd{font-family:var(--read);font-size:1.2rem;font-weight:600}
+.ipa{font-family:var(--mono);font-size:.9rem;color:var(--muted)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px 20px;margin:0}
+.stats div{min-width:0}
+.stats dt{color:var(--muted);font-size:.8rem;letter-spacing:.04em}
+.stats dd{margin:0;font-size:1.35rem;font-weight:600;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:1px 10px;font-size:.82rem;font-family:var(--mono)}
+.pairs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.pairs li{display:grid;grid-template-columns:2.2em minmax(0,1fr);gap:0 8px}
+.pairs .n{color:var(--muted);font-family:var(--mono);font-size:.8rem;padding-top:.45em}
+.pairs .en{font-family:var(--read);font-size:1.05rem;cursor:pointer}
+.pairs .zh{color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.8rem;color:var(--muted);font-weight:500;letter-spacing:.04em}
+td.wd{white-space:nowrap}
+.gram{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.gram q{font-family:var(--read);font-size:1.02rem;quotes:none}
+.note{border:1px dashed var(--line);border-radius:6px;padding:10px 12px;color:var(--muted)}
+.err{color:var(--bad)}
+
+/* typing platen */
+.platen{background:var(--sunk);border-radius:8px;padding:22px 20px;cursor:text;border:1px solid var(--line)}
+.line{font-family:var(--mono);font-size:1.28rem;line-height:1.95;white-space:pre-wrap;overflow-wrap:break-word;color:var(--muted)}
+.line.big{font-size:2rem;letter-spacing:.06em;text-align:center}
+.line .ok{color:var(--ok)}
+.line .bad{color:var(--bad);background:var(--bad-soft);border-radius:2px}
+.line .cur{box-shadow:inset 0 -3px 0 var(--accent);color:var(--ink);animation:blink 1.1s steps(2,start) infinite}
+@keyframes blink{50%{box-shadow:inset 0 -3px 0 transparent}}
+@media (prefers-reduced-motion:reduce){.line .cur{animation:none}}
+.platen.done{border-color:var(--ok);background:var(--ok-soft)}
+.typebox{font-family:var(--mono);font-size:1.05rem;min-height:0;resize:none}
+.bar{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:99px;padding:2px 4px 2px 11px;font-family:var(--mono);font-size:.86rem;background:var(--surface)}
+.chip.now{border-color:var(--accent);background:var(--accent-soft)}
+.chip button{border:0;background:none;cursor:pointer;color:var(--muted);padding:0 6px;border-radius:99px}
+.chip button:hover{color:var(--bad)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.center{text-align:center}
+@media (max-width:520px){.line{font-size:1.08rem}.line.big{font-size:1.5rem}#reader{font-size:1.06rem}.sheet{padding:14px}.tabs button{padding:9px 10px}}
+.tabs{overflow-x:auto}
+.tabs button{white-space:nowrap}
+.d-title{font-size:1.3rem;font-family:var(--read)}
+.daily-text{font-family:var(--read);font-size:1.1rem;line-height:1.85;max-width:66ch;display:flex;flex-direction:column;gap:.8em}
+.lnk,.res-list a{color:var(--accent);font-weight:600;text-decoration:none}
+.lnk:hover,.res-list a:hover{text-decoration:underline}
+.speak-line{font-family:var(--read);font-size:1.4rem;line-height:1.8;color:var(--ink)}
+.speak-line .ok{color:var(--ok)}
+.speak-line .mid{color:var(--warn);cursor:pointer}
+#settings label{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.speak-line .bad{color:var(--bad);text-decoration:underline wavy;text-underline-offset:5px;cursor:pointer}
+.score{font-size:3.2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;min-width:1.8em}
+.btn.live{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.res-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px 24px}
+.res-list li{min-width:0;overflow-wrap:anywhere}
+@media (max-width:520px){.speak-line{font-size:1.15rem}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>英文跟读打字台</h1>
+      <p class="sub">听一遍，读懂它，再一句一句打出来。</p>
+    </div>
+    <div class="row"><button class="btn" id="btn-set" hidden>设置</button><button class="btn" id="btn-edit">更换文章</button></div>
+  </header>
+
+  <section class="sheet bench" id="settings" hidden>
+    <h2>微软语音（Azure Speech）</h2>
+    <p class="muted small">填了以后，朗读用微软神经语音，跟读用微软的发音评测。密钥只保存在这台设备的这个浏览器里，不会写进网页文件，也不会上传到 GitHub。</p>
+    <div class="row">
+      <label for="az-key">密钥 <input type="password" id="az-key" size="30" autocomplete="off" spellcheck="false"></label>
+      <label for="az-region">区域 <input type="text" id="az-region" size="12" placeholder="eastasia" autocapitalize="off" spellcheck="false"></label>
+      <label for="az-voice">声音 <select id="az-voice">
+        <option value="en-US-AvaNeural">Ava（美音，女）</option><option value="en-US-JennyNeural">Jenny（美音，女）</option>
+        <option value="en-US-AriaNeural">Aria（美音，女）</option><option value="en-US-AndrewNeural">Andrew（美音，男）</option>
+        <option value="en-US-GuyNeural">Guy（美音，男）</option><option value="en-GB-SoniaNeural">Sonia（英音，女）</option>
+        <option value="en-GB-RyanNeural">Ryan（英音，男）</option></select></label>
+    </div>
+    <h2>文章解析（大模型接口）</h2>
+    <p class="muted small">用来做逐句翻译、重点词汇和语法。支持 OpenAI 兼容接口，默认填的是 DeepSeek。不填就没有解析，其他功能不受影响。</p>
+    <div class="row">
+      <label for="llm-base">接口地址 <input type="text" id="llm-base" size="26" spellcheck="false"></label>
+      <label for="llm-model">模型 <input type="text" id="llm-model" size="14" spellcheck="false"></label>
+      <label for="llm-key">密钥 <input type="password" id="llm-key" size="30" autocomplete="off" spellcheck="false"></label>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="set-save">保存</button>
+      <button class="btn" id="set-test">保存并试听微软语音</button>
+      <button class="btn quiet" id="set-close">关闭</button>
+      <span class="small muted" id="set-msg"></span>
+    </div>
+  </section>
+
+
+  <section class="sheet bench" id="editor" hidden>
+    <label for="article-input"><strong>粘贴一篇英文文章</strong> <span class="muted small">建议 100–400 词，一次练得完</span></label>
+    <textarea id="article-input" spellcheck="false" placeholder="Paste your English article here…"></textarea>
+    <div class="row">
+      <button class="btn primary" id="btn-load">开始学习</button>
+      <button class="btn" id="btn-sample">用示例文章</button>
+      <button class="btn quiet" id="btn-cancel">取消</button>
+      <span class="err small" id="editor-msg"></span>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="学习步骤">
+    <button role="tab" data-tab="today" aria-selected="false">今日</button>
+    <button role="tab" data-tab="read" aria-selected="true">朗读</button>
+    <button role="tab" data-tab="parse" aria-selected="false">解析</button>
+    <button role="tab" data-tab="type" aria-selected="false">跟打</button>
+    <button role="tab" data-tab="speak" aria-selected="false">跟读</button>
+    <button role="tab" data-tab="words" aria-selected="false">单词</button>
+    <button role="tab" data-tab="res" aria-selected="false">资源</button>
+  </nav>
+
+  <!-- 今日 -->
+  <section class="bench" id="tab-today" hidden>
+    <div class="sheet bench">
+      <div class="row"><span class="pill" id="d-date"></span><span class="pill" id="d-genre"></span><span class="grow"></span><span class="muted small" id="d-src"></span></div>
+      <h2 class="d-title" id="d-title"></h2>
+      <div class="daily-text" id="d-text"></div>
+      <div class="row">
+        <button class="btn primary" id="d-use">学这一篇</button>
+        <button class="btn" id="d-new" hidden>让 Claude 另写一篇</button>
+        <span class="small muted" id="d-msg"></span>
+      </div>
+    </div>
+    <div class="sheet bench">
+      <h2>今天去这里找一篇真实的文章</h2>
+      <p><a class="lnk" id="d-site" target="_blank" rel="noopener"></a> <span class="muted" id="d-site-desc"></span></p>
+      <p class="muted small">打开网站挑一篇，复制正文，回来点右上角「更换文章」粘贴，就能朗读、解析、跟打和跟读。更多来源在「资源」里。</p>
+    </div>
+  </section>
+
+  <!-- 跟读 -->
+  <section class="bench" id="tab-speak" hidden>
+    <div class="row">
+      <strong id="s-pos" class="grow">第 1 句</strong>
+      <span class="small muted">本篇平均 <b id="s-avg" class="ipa">–</b> 分</span>
+    </div>
+    <p class="note" id="s-block" hidden></p>
+    <div class="platen"><div class="speak-line" id="s-line"></div><p class="muted" id="s-zh" hidden></p></div>
+    <div class="row">
+      <button class="btn" id="s-say">听示范</button>
+      <button class="btn primary" id="s-rec">开始跟读</button>
+      <button class="btn" id="s-prev">上一句</button>
+      <button class="btn" id="s-next">下一句</button>
+      <span class="small muted" id="s-live"></span>
+    </div>
+    <div class="sheet bench" id="s-result" hidden>
+      <div class="row">
+        <div class="score" id="s-score"></div>
+        <div class="grow"><div id="s-verdict"></div><div class="muted small" id="s-heard"></div></div>
+      </div>
+      <div class="row" id="s-miss"></div>
+    </div>
+    <p class="muted small" id="s-how"></p>
+  </section>
+
+  <!-- 资源 -->
+  <section class="bench" id="tab-res" hidden>
+    <div class="row">
+      <input type="text" id="r-q" class="grow" placeholder="搜索网站名或简介" spellcheck="false">
+      <select id="r-cat" aria-label="分类"><option value="">全部分类</option></select>
+    </div>
+    <div id="r-out" class="bench"></div>
+    <p class="muted small">来源：en.knowledgefxg.com 的英语学习导航。未收录其中的盗版影视和书刊下载、成人内容、单机和网络游戏，以及 X、Telegram 账号。</p>
+  </section>
+
+  <!-- 朗读 -->
+  <section class="bench" id="tab-read">
+    <div class="row">
+      <button class="btn primary" id="btn-play">播放全文</button>
+      <button class="btn" id="btn-stop">停止</button>
+      <label class="row small" for="rate">语速 <input type="range" id="rate" min="0.5" max="1.3" step="0.05" value="0.9"> <span id="rate-val" class="ipa">0.90×</span></label>
+      <label class="row small" for="voice">声音 <select id="voice"><option value="">自动</option></select></label>
+    </div>
+    <p class="note small" id="voice-hint" hidden></p>
+    <p class="note small" id="tts-missing" hidden>这个浏览器没有提供语音朗读。请用电脑上的 Chrome、Edge 或 Safari 打开本页。</p>
+    <div class="sheet">
+      <div id="reader"></div>
+      <div id="wordbar" class="row"><span class="muted small">点任意单词听发音；点一句话，播放会从这句开始。</span></div>
+    </div>
+  </section>
+
+  <!-- 解析 -->
+  <section class="bench" id="tab-parse" hidden>
+    <div class="sheet"><dl class="stats" id="stats"></dl></div>
+    <div class="sheet bench">
+      <div class="row">
+        <h2 class="grow">逐句翻译、重点词汇和语法</h2>
+        <button class="btn primary" id="btn-ai" disabled>正在连接 Claude…</button>
+        <button class="btn" id="btn-ai-stop" hidden>停止</button>
+      </div>
+      <p class="muted small" id="ai-msg">由 Claude 解析这篇文章，会用到你自己的 Claude 用量，第一次使用时会请你确认。</p>
+      <div id="manual" class="bench" hidden>
+        <div class="row"><strong>第 1 步</strong><button class="btn primary" id="m-copy">复制解析提示词</button><span class="muted small">粘贴到任意 Claude 对话里发送</span></div>
+        <textarea id="m-prompt" rows="4" readonly hidden></textarea>
+        <label for="m-paste"><strong>第 2 步</strong> <span class="muted small">把 Claude 的回复整段粘贴到这里</span></label>
+        <textarea id="m-paste" rows="4" spellcheck="false" placeholder='{"summary": "…", "sentences": […], …}'></textarea>
+        <div class="row"><button class="btn" id="m-import">导入解析</button><span class="small" id="m-msg"></span></div>
+      </div>
+      <div id="ai-out" class="bench"></div>
+    </div>
+  </section>
+
+  <!-- 跟打文章 -->
+  <section class="bench" id="tab-type" hidden>
+    <div class="row">
+      <strong id="t-pos" class="grow">第 1 句</strong>
+      <span class="small muted">速度 <b id="t-wpm" class="ipa">–</b> WPM</span>
+      <span class="small muted">正确率 <b id="t-acc" class="ipa">–</b></span>
+    </div>
+    <div class="bar"><i id="t-bar"></i></div>
+    <div id="t-work" class="bench">
+      <div class="platen" id="t-platen"><div class="line" id="t-line"></div></div>
+      <p class="muted" id="t-zh" hidden></p>
+      <textarea class="typebox" id="t-input" rows="2" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="在这里照着上面的句子打字（请切到英文输入法）"></textarea>
+      <p class="small err" id="t-hint"></p>
+      <div class="row">
+        <button class="btn" id="t-say">朗读本句</button>
+        <button class="btn" id="t-prev">上一句</button>
+        <button class="btn" id="t-next">跳过</button>
+        <button class="btn quiet" id="t-reset">从头再打</button>
+        <label class="row small" for="t-auto"><input type="checkbox" id="t-auto" checked> 每句先读一遍</label>
+      </div>
+    </div>
+    <div class="sheet bench" id="t-result" hidden>
+      <h2>整篇打完了</h2>
+      <dl class="stats" id="t-final"></dl>
+      <div id="t-miss" class="bench"></div>
+      <div class="row"><button class="btn primary" id="t-again">再打一遍</button></div>
+    </div>
+  </section>
+
+  <!-- 单词练习 -->
+  <section class="bench" id="tab-words" hidden>
+    <div class="row">
+      <div class="seg" role="group" aria-label="练习方式">
+        <button id="w-look" aria-pressed="true">看词打字</button>
+        <button id="w-dict" aria-pressed="false">听写</button>
+      </div>
+      <span class="grow"></span>
+      <input type="text" id="w-add" placeholder="手动加一个词" autocapitalize="off" spellcheck="false" size="14">
+      <button class="btn" id="w-add-btn">添加</button>
+    </div>
+    <div class="chips" id="w-chips"></div>
+    <p class="note" id="w-empty" hidden>单词本还是空的。到「朗读」里点一个单词，再点「加入单词练习」；或者在「解析」里让 Claude 挑出重点词汇。</p>
+    <div id="w-work" class="bench">
+      <div class="platen center" id="w-platen">
+        <div class="line big" id="w-line"></div>
+        <p class="small" id="w-meta"></p>
+      </div>
+      <input type="text" class="typebox" id="w-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="打出这个词">
+      <div class="row">
+        <button class="btn" id="w-say">再听一遍</button>
+        <button class="btn" id="w-reveal" hidden>显示答案</button>
+        <button class="btn" id="w-skip">下一个</button>
+        <span class="small muted" id="w-pos"></span>
+      </div>
+    </div>
+    <div class="sheet bench" id="w-result" hidden>
+      <h2 id="w-score"></h2>
+      <div class="row"><button class="btn primary" id="w-again">再来一轮</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+var SAMPLE = "Every morning, Lin opens the window before she opens her laptop. The street below is already awake. A baker carries warm bread across the road, and two children argue about who should hold the umbrella.\n\nShe used to think that learning English meant memorizing long lists of words. Now she believes it is closer to learning a song. You listen first, then you follow, and one day the rhythm belongs to you.\n\nSo she reads one short article aloud each day, types it line by line, and writes down three words she wants to keep. It takes fifteen minutes. After a year, those minutes have quietly become a habit she would not trade for anything.";
+var WORD_RE = /[A-Za-z]+(?:['-][A-Za-z]+)*/g;
+var COMMON = 'because through another between without something everything anything nothing morning evening children believe already against however together different important thought although themselves yourself usually perhaps certain several various whether whatever wherever everyone someone anyone people little before after should would could their there where which while about these those having being really always never around during minutes'.split(' ');
+
+function $(s){return document.querySelector(s)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var store={
+  get:function(){try{return JSON.parse(localStorage.getItem('typing-desk')||'null')}catch(e){return null}},
+  set:function(v){try{localStorage.setItem('typing-desk',JSON.stringify(v))}catch(e){}}
+};
+
+var S={text:'',sents:[],paras:[],analysis:null,words:[],dict:{},rate:0.9,voice:'',pick:null,cur:0};
+function save(){store.set({daily:S.daily||null,dailyDone:S.dailyDone||'',text:S.text,analysis:S.analysis,words:S.words,dict:S.dict,rate:S.rate,voice:S.voice})}
+
+/* ---------- text ---------- */
+function normalize(t){
+  var map={'，':', ','。':'. ','？':'? ','！':'! ','：':': ','；':'; ','（':' (','）':') '};
+  return t.replace(/\r/g,'').replace(/[‘’ʼ]/g,"'").replace(/[“”]/g,'"')
+    .replace(/[–—]/g,'-').replace(/…/g,'...').replace(/[，。？！：；（）]/g,function(c){return map[c]})
+    .replace(/[ 　\t]/g,' ').replace(/ +/g,' ')
+    .split(/\n+/).map(function(s){return s.trim()}).filter(Boolean).join('\n');
+}
+function splitSents(p){
+  var raw=p.match(/[^.!?]+(?:[.!?]+["')\]]*|$)/g)||[p], out=[];
+  raw.forEach(function(s){
+    s=s.trim(); if(!s) return;
+    var prev=out[out.length-1];
+    if(prev){
+      var num=/\d\.$/.test(prev)&&/^\d/.test(s);
+      if(num||/\b(?:Mr|Mrs|Ms|Dr|Prof|St|Jr|Sr|vs|No|e\.g|i\.e|[A-Z])\.$/.test(prev)||!/[A-Za-z0-9]/.test(s)){
+        out[out.length-1]=prev+(num?'':' ')+s; return;
+      }
+    }
+    out.push(s);
+  });
+  return out;
+}
+function loadText(t,keep){
+  S.text=normalize(t); S.sents=[]; S.paras=[];
+  S.text.split('\n').forEach(function(p){
+    var idx=[]; splitSents(p).forEach(function(s){idx.push(S.sents.length); S.sents.push(s)}); S.paras.push(idx);
+  });
+  if(!keep) S.analysis=null;
+  S.pick=null; S.cur=0;
+  if(!S.words.length) candidates().forEach(function(w){addWord(w,true)});
+  renderReader(); renderStats(); renderAnalysis(); tReset(false); wRender(); spReset(); save();
+}
+function allWords(){return S.text.match(WORD_RE)||[]}
+function candidates(){
+  var seen={},out=[];
+  allWords().forEach(function(w){var k=w.toLowerCase(); if(k.length>=7&&!seen[k]&&COMMON.indexOf(k)<0&&w[0]===k[0]){seen[k]=1;out.push(k)}});
+  return out.sort(function(a,b){return b.length-a.length}).slice(0,10);
+}
+
+/* ---------- own-hosted mode: Azure Speech + an LLM endpoint, keys kept in this browser only ---------- */
+var HOSTED=!!(window.claude&&window.claude.use);   /* inside a Claude artifact the outside network and the mic are blocked */
+var CFG={azKey:'',azRegion:'',azVoice:'en-US-AvaNeural',llmBase:'https://api.deepseek.com',llmModel:'deepseek-chat',llmKey:''};
+try{var _c=JSON.parse(localStorage.getItem('typing-desk-keys')||'null'); if(_c) for(var _k in CFG) if(typeof _c[_k]==='string'&&_c[_k]) CFG[_k]=_c[_k]}catch(e){}
+function azOn(){return !HOSTED&&!!CFG.azKey&&!!CFG.azRegion}
+var audio=null, ttsCache={};
+function azNote(m){var n=$('#tts-missing'); n.hidden=!m; n.textContent=m||''}
+function azSay(text,rate,my,onend){
+  var k=CFG.azVoice+'|'+text, done=function(){ if(my===token&&onend) onend() };
+  function play(url){ if(my!==token) return; audio=new Audio(url); audio.playbackRate=rate; audio.onended=done; audio.onerror=done; var p=audio.play(); if(p&&p.catch) p.catch(done) }
+  if(ttsCache[k]) return play(ttsCache[k]);
+  fetch('https://'+CFG.azRegion+'.tts.speech.microsoft.com/cognitiveservices/v1',{method:'POST',
+    headers:{'Ocp-Apim-Subscription-Key':CFG.azKey,'Content-Type':'application/ssml+xml','X-Microsoft-OutputFormat':'audio-24khz-48kbitrate-mono-mp3'},
+    body:"<speak version='1.0' xml:lang='en-US'><voice name='"+CFG.azVoice+"'>"+esc(text)+"</voice></speak>"})
+  .then(function(r){ if(!r.ok) throw new Error(r.status===401||r.status===403?'密钥或区域不对':'错误 '+r.status); return r.blob() })
+  .then(function(b){ azNote(''); ttsCache[k]=URL.createObjectURL(b); play(ttsCache[k]) })
+  .catch(function(e){ azNote('微软语音没有读出来（'+(e.message==='Failed to fetch'?'连不上微软服务':e.message)+'），这次改用浏览器自带语音。请在「设置」里检查密钥和区域。'); if(my===token) browserSay(text,rate,my,onend) });
+}
+function loadSDK(){
+  return new Promise(function(res,rej){
+    if(window.SpeechSDK) return res();
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1.40.0/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js';
+    s.onload=function(){window.SpeechSDK?res():rej()}; s.onerror=rej; document.head.appendChild(s);
+  });
+}
+function azErr(e){
+  if(/401|403|Authentication|1006/i.test(e)) return '微软语音的密钥或区域不对，请在「设置」里检查。';
+  if(/microphone|NotAllowed|Permission|denied/i.test(e)) return MIC_LOCAL;
+  return '微软发音评测出错：'+String(e).slice(0,90);
+}
+function azStart(){
+  var btn=$('#s-rec'),live=$('#s-live'),target=S.sents[P.i]||'',tw=spWords(target);
+  stopAll(); btn.disabled=true; live.textContent='正在连接微软语音…';
+  loadSDK().then(function(){
+    var K=window.SpeechSDK, cfg=K.SpeechConfig.fromSubscription(CFG.azKey,CFG.azRegion); cfg.speechRecognitionLanguage='en-US';
+    var pa=new K.PronunciationAssessmentConfig(target,K.PronunciationAssessmentGradingSystem.HundredMark,K.PronunciationAssessmentGranularity.Word,false);
+    var rec=new K.SpeechRecognizer(cfg,K.AudioConfig.fromDefaultMicrophoneInput()); pa.applyTo(rec);
+    var got=[],flu=[],texts=[],err='',closed=false,dropped=false;
+    function done(){
+      try{rec.close()}catch(e){}
+      if(dropped) return;
+      if(!got.length){ live.textContent=err?azErr(err):'没有听到声音，再试一次。'; return }
+      live.textContent=''; azGrade(target,got,flu,texts.join(' '));
+    }
+    function finish(){
+      if(closed) return; closed=true; P.on=false; btn.textContent='开始跟读'; btn.classList.remove('live'); btn.disabled=false;
+      try{rec.stopContinuousRecognitionAsync(done,done)}catch(e){done()}
+    }
+    rec.recognizing=function(_,e){ live.textContent=texts.concat(e.result.text).join(' ') };
+    rec.recognized=function(_,e){
+      if(e.result.reason!==K.ResultReason.RecognizedSpeech||!e.result.text) return;
+      texts.push(e.result.text);
+      try{
+        var r=K.PronunciationAssessmentResult.fromResult(e.result);
+        if(typeof r.fluencyScore==='number') flu.push(r.fluencyScore);
+        ((r.detailResult&&r.detailResult.Words)||[]).forEach(function(w){
+          var a=w.PronunciationAssessment||{}, t=spWords(String(w.Word||''));
+          t.forEach(function(x){got.push({w:x,s:typeof a.AccuracyScore==='number'?a.AccuracyScore:0})});
+        });
+      }catch(x){ spWords(e.result.text).forEach(function(x){got.push({w:x,s:0})}); err=err||'no assessment in result' }
+      if(got.length>=tw.length) finish();
+    };
+    rec.canceled=function(_,e){ if(e.errorDetails) err=e.errorDetails; finish() };
+    P.stop=finish; P.rec={abort:function(){dropped=true; finish()}};
+    rec.startContinuousRecognitionAsync(function(){ if(closed) return; P.on=true; btn.disabled=false; btn.textContent='读完了，停止'; btn.classList.add('live'); live.textContent='正在听…' },
+      function(e){err=String(e); finish()});
+  }).catch(function(){btn.disabled=false; live.textContent='微软语音组件没有加载出来，请检查网络后再试。'});
+}
+function azGrade(target,got,flu,heard){
+  var t=spWords(target), a=spAlign(t,got.map(function(g){return g.w})), marks=[], sum=0, n=0;
+  t.forEach(function(w,i){
+    if(a.map[i]==null){marks[i]='bad';return}
+    var s=got[a.map[i]].s; sum+=s; n++; marks[i]=s>=80?'ok':(s>=60?'mid':'bad');
+  });
+  var acc=n?Math.round(sum/n):0, comp=t.length?Math.round(100*n/t.length):0;
+  var fl=flu.length?Math.round(flu.reduce(function(x,y){return x+y},0)/flu.length):acc;
+  var total=Math.round((acc*0.7+fl*0.3)*comp/100);
+  spResult(total,marks,t,'准确度 '+acc+' · 流利度 '+fl+' · 完整度 '+comp+'　听到的是：'+heard);
+}
+/* an OpenAI-compatible endpoint standing in for the Claude button when the page is not on claude.ai */
+var llmSample={json:async function(prompt,opts){
+  var url=CFG.llmBase.replace(/\/+$/,'')+'/chat/completions', body={model:CFG.llmModel,messages:[{role:'user',content:prompt}],temperature:0.3,response_format:{type:'json_object'}}, r;
+  async function call(){ return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.llmKey},body:JSON.stringify(body),signal:opts&&opts.signal}) }
+  try{ r=await call(); if(r.status===400||r.status===422){ delete body.response_format; r=await call() } }
+  catch(e){ throw {code:e&&e.name==='AbortError'?'cancelled':'llm_net'} }
+  if(r.status===401||r.status===403) throw {code:'llm_auth'};
+  if(r.status===429||r.status===402) throw {code:'llm_quota'};
+  if(!r.ok) throw {code:'upstream_error'};
+  var d=await r.json(), txt=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||'';
+  try{ return JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1)) }catch(e){ throw {code:'invalid_json',text:txt} }
+}};
+var claudeSample=null, AI_NAME='Claude';
+function pickAI(){
+  if(claudeSample){sample=claudeSample; AI_NAME='Claude'}
+  else if(!HOSTED&&CFG.llmKey&&CFG.llmBase){sample=llmSample; AI_NAME='AI'}
+  else sample=null;
+  aiReady();
+}
+function setOpen(){
+  ['azKey:az-key','azRegion:az-region','azVoice:az-voice','llmBase:llm-base','llmModel:llm-model','llmKey:llm-key'].forEach(function(p){p=p.split(':'); $('#'+p[1]).value=CFG[p[0]]});
+  $('#settings').hidden=false; $('#set-msg').textContent='';
+}
+function setSave(){
+  CFG.azKey=$('#az-key').value.trim(); CFG.azRegion=$('#az-region').value.trim().toLowerCase().replace(/\s+/g,''); CFG.azVoice=$('#az-voice').value||CFG.azVoice;
+  CFG.llmBase=$('#llm-base').value.trim()||'https://api.deepseek.com'; CFG.llmModel=$('#llm-model').value.trim()||'deepseek-chat'; CFG.llmKey=$('#llm-key').value.trim();
+  var ok=true; try{localStorage.setItem('typing-desk-keys',JSON.stringify(CFG))}catch(e){ok=false}
+  ttsCache={}; azNote(''); pickAI(); spInit(); if(synth) loadVoices();
+  $('#set-msg').textContent=ok?'已保存。':'已启用，但这个浏览器不让保存，下次打开要重新填。';
+}
+$('#btn-set').hidden=HOSTED;
+$('#btn-set').onclick=function(){ if($('#settings').hidden) setOpen(); else $('#settings').hidden=true };
+$('#set-close').onclick=function(){$('#settings').hidden=true};
+$('#set-save').onclick=setSave;
+$('#set-test').onclick=function(){ setSave(); if(!azOn()){$('#set-msg').textContent='先填微软语音的密钥和区域。';return} say('Hello. This is the Microsoft voice you selected.',1) };
+
+/* ---------- speech ---------- */
+var synth=('speechSynthesis' in window)?window.speechSynthesis:null, voices=[], token=0, playing=false;
+function loadVoices(){
+  if(!synth) return;
+  voices=synth.getVoices().filter(function(v){return /^en[-_]/i.test(v.lang)});
+  voices.sort(function(a,b){return msRank(a)-msRank(b)});
+  var auto=autoVoice(), sel=$('#voice'), h='<option value="">自动'+(auto?'：'+esc(vLabel(auto)):'')+'</option>';
+  voices.forEach(function(v){h+='<option value="'+esc(v.voiceURI)+'">'+esc(vLabel(v))+' · '+esc(v.lang)+'</option>'});
+  sel.innerHTML=h; sel.value=S.voice; if(sel.value!==S.voice) sel.value='';
+  var hasMs=voices.some(function(v){return /Microsoft/i.test(v.name)}), hint=$('#voice-hint');
+  hint.hidden=!voices.length||voices.some(function(v){return msRank(v)===0});
+  if(azOn()) hint.hidden=true;
+  $('#voice').parentNode.hidden=azOn();
+  hint.textContent=hasMs?'这个浏览器只有微软的本地语音。用 Microsoft Edge 打开本页，可以用更自然的微软在线语音（Ava、Aria、Jenny 等）。'
+    :'这个浏览器没有微软语音。用 Microsoft Edge 打开本页，「声音」里会出现微软自然语音（Ava、Aria、Jenny 等），并自动选用。';
+}
+/* Microsoft voices first: 0 = online natural (Edge), 1 = other Microsoft, 2 = everything else */
+function msRank(v){return /Microsoft/i.test(v.name)?(/Natural/i.test(v.name)?0:1):2}
+function vLabel(v){return v.name.replace(/ Online \(Natural\)/i,'（自然）').replace(/ - English.*$/i,'')}
+function autoVoice(){
+  var us=voices.filter(function(x){return /en[-_]US/i.test(x.lang)}), pool=us.length?us:voices;
+  var best=pool.filter(function(x){return msRank(x)===0});
+  var pref=['Ava','Aria','Jenny','Emma','Andrew','Guy'];
+  for(var i=0;i<pref.length;i++){var m=best.filter(function(x){return x.name.indexOf(pref[i])>=0&&!/Multilingual/i.test(x.name)})[0]; if(m) return m}
+  return best[0]||pool.filter(function(x){return msRank(x)===1})[0]||pool[0]||null;
+}
+function pickVoice(){
+  return voices.filter(function(x){return x.voiceURI===S.voice})[0]||autoVoice();
+}
+function say(text,rate,onend){
+  var my=++token; if(synth) synth.cancel(); if(audio){audio.pause(); audio=null}
+  if(azOn()) azSay(text,rate||S.rate,my,onend); else browserSay(text,rate,my,onend);
+}
+function browserSay(text,rate,my,onend){
+  if(!synth){ if(onend) onend(); return; }
+  var u=new SpeechSynthesisUtterance(text), v=pickVoice();
+  if(v){u.voice=v;u.lang=v.lang}else u.lang='en-US';
+  u.rate=rate||S.rate;
+  u.onend=u.onerror=function(){ if(my===token&&onend) onend() };
+  synth.speak(u);
+}
+function stopAll(){token++; playing=false; if(synth) synth.cancel(); if(audio){audio.pause(); audio=null} $('#btn-play').textContent='播放全文'}
+function playFrom(i){
+  if(i>=S.sents.length){stopAll(); markSent(-1); return}
+  playing=true; S.cur=i; markSent(i,true); $('#btn-play').textContent='暂停';
+  say(S.sents[i],S.rate,function(){ if(playing) playFrom(i+1) });
+}
+
+/* ---------- reader ---------- */
+function wrapWords(s){return s.split(/([A-Za-z]+(?:['-][A-Za-z]+)*)/).map(function(t,k){return k%2?'<span class="w">'+t+'</span>':esc(t)}).join('')}
+function renderReader(){
+  $('#reader').innerHTML=S.paras.map(function(p){
+    return '<p>'+p.map(function(i){return '<span class="sent" data-i="'+i+'">'+wrapWords(S.sents[i])+'</span>'}).join(' ')+'</p>';
+  }).join('');
+  renderWordbar();
+}
+function markSent(i,scroll){
+  document.querySelectorAll('.sent.on').forEach(function(e){e.classList.remove('on')});
+  var el=document.querySelector('.sent[data-i="'+i+'"]');
+  if(el){el.classList.add('on'); if(scroll&&el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:'smooth'})}
+}
+function wordForm(w,sent){
+  var first=(sent.match(WORD_RE)||[])[0];
+  return (w===first&&w!=='I'&&w!==w.toUpperCase())?w.toLowerCase():w;
+}
+function renderWordbar(){
+  var bar=$('#wordbar'), p=S.pick;
+  if(!p){bar.innerHTML='<span class="muted small">点任意单词听发音；点一句话，播放会从这句开始。</span>';return}
+  var d=S.dict[p.w.toLowerCase()]||{}, has=hasWord(p.w);
+  bar.innerHTML='<span class="wd">'+esc(p.w)+'</span>'+(d.ipa?'<span class="ipa">'+esc(d.ipa)+'</span>':'')+
+    '<span class="grow">'+(d.zh?esc((d.pos?d.pos+' ':'')+d.zh):'')+(d.note?'<br><span class="muted small">'+esc(d.note)+'</span>':'')+'</span>'+
+    '<button class="btn" data-a="say">再听</button>'+
+    (sample&&!d.zh?'<button class="btn" data-a="look">查释义</button>':'')+
+    '<button class="btn" data-a="add"'+(has?' disabled':'')+'>'+(has?'已在单词练习':'加入单词练习')+'</button>'+
+    '<span class="err small" id="look-msg"></span>';
+}
+$('#reader').addEventListener('click',function(e){
+  var sent=e.target.closest('.sent'); if(!sent) return;
+  var i=+sent.dataset.i, w=e.target.closest('.w');
+  stopAll(); S.cur=i; markSent(i);
+  document.querySelectorAll('.w.pick').forEach(function(x){x.classList.remove('pick')});
+  if(w){w.classList.add('pick'); S.pick={w:wordForm(w.textContent,S.sents[i]),si:i}; renderWordbar(); say(S.pick.w,Math.min(S.rate,0.85))}
+  else say(S.sents[i]);
+});
+$('#wordbar').addEventListener('click',function(e){
+  var a=e.target.dataset&&e.target.dataset.a; if(!a||!S.pick) return;
+  if(a==='say') say(S.pick.w,Math.min(S.rate,0.85));
+  if(a==='add'){addWord(S.pick.w); renderWordbar()}
+  if(a==='look') lookup(e.target);
+});
+$('#btn-play').onclick=function(){ if(playing){stopAll()} else playFrom(S.cur<S.sents.length?S.cur:0) };
+$('#btn-stop').onclick=function(){stopAll(); S.cur=0; markSent(-1)};
+$('#rate').oninput=function(){S.rate=+this.value; $('#rate-val').textContent=S.rate.toFixed(2)+'×'; save()};
+$('#voice').onchange=function(){S.voice=this.value; save()};
+
+/* ---------- analysis ---------- */
+function stat(k,v){return '<div><dt>'+k+'</dt><dd>'+v+'</dd></div>'}
+function renderStats(){
+  var ws=allWords(), uniq={}; ws.forEach(function(w){uniq[w.toLowerCase()]=1});
+  var n=ws.length, sn=S.sents.length||1;
+  $('#stats').innerHTML=stat('词数',n)+stat('句数',S.sents.length)+stat('不重复词',Object.keys(uniq).length)+
+    stat('平均句长',(n/sn).toFixed(1)+' 词')+stat('朗读约需',Math.max(1,Math.round(n/130))+' 分钟')+
+    stat('跟打约需',Math.max(1,Math.round(S.text.length/5/30))+' 分钟');
+}
+var sample=null, aiCtl=null;
+var AI_COPY={rate_limited:'请求太频繁，或 Claude 用量已到上限，请稍后再试。',session_expired:'登录已过期，请重新登录后再试。',
+  refused:'Claude 没有处理这段内容，换一篇文章试试。',invalid_json:'解析结果不完整，请再试一次；文章较长时可以分段解析。',
+  empty_completion:'这次没有得到结果，请再试一次。',llm_auth:'解析接口的密钥不对或已失效，请在「设置」里检查。',llm_net:'连不上解析接口，请检查「设置」里的接口地址和网络。',llm_quota:'解析接口的额度用完了或请求太频繁。',prompt_too_large:'文章太长，请缩短后再试。'};
+var AI_OFF=['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'];
+function aiFail(e){
+  var c=e&&e.code; if(c==='cancelled') return '';
+  if(AI_OFF.indexOf(c)>=0){sample=null; aiReady(); return ''}
+  return AI_COPY[c]||'连接中断，请再试一次。';
+}
+function aiReady(){
+  var b=$('#btn-ai');
+  b.hidden=!sample; $('#ai-msg').className='muted small';
+  if(sample){b.disabled=false; b.textContent=S.analysis?'重新解析':'让 '+AI_NAME+' 解析'; $('#ai-msg').textContent=AI_NAME==='Claude'?'由 Claude 解析这篇文章，会用到你自己的 Claude 用量，第一次使用时会请你确认。':'解析会用到你在「设置」里填的大模型接口。'}
+  else if(!HOSTED){$('#ai-msg').textContent='还没有配置解析接口。点右上角「设置」，填一个大模型接口的密钥，就能用逐句翻译、重点词汇和语法解析。'}
+  else{$('#ai-msg').innerHTML='现在是以访客身份打开的，所以没有「让 Claude 解析」按钮。请先登录 claude.ai，再从<b>你自己的 Artifacts 列表</b>（claude.ai/code/artifacts）或 Claude 应用里打开「英文跟读打字台」，按钮就会出现。'}
+  renderWordbar(); renderDaily();
+}
+$('#btn-ai').onclick=async function(){
+  if(!sample) return;
+  var b=this, msg=$('#ai-msg'), t0=Date.now(), prompt=buildPrompt();
+  aiCtl=new AbortController(); b.disabled=true; $('#btn-ai-stop').hidden=false; msg.className='muted small';
+  var tick=setInterval(function(){msg.textContent=AI_NAME+' 正在读这篇文章… 已用 '+Math.round((Date.now()-t0)/1000)+' 秒（通常 10–60 秒）'},1000);
+  msg.textContent=AI_NAME+' 正在读这篇文章…';
+  try{
+    var d=await sample.json(prompt,{signal:aiCtl.signal,cache:{gcTime:86400000}});
+    applyAnalysis(d);
+    msg.textContent=S.sents.length>40?'文章较长，只解析了前 40 句。':'解析完成，重点词汇已加入单词练习。';
+  }catch(e){ var m=aiFail(e); if(sample){msg.textContent=m||'已停止。'; if(m) msg.className='err small'} }
+  clearInterval(tick); $('#btn-ai-stop').hidden=true;
+  if(sample){b.disabled=false; b.textContent=S.analysis?'重新解析':'让 '+AI_NAME+' 解析'}
+};
+function buildPrompt(){
+  return 'You are an English teacher helping a Chinese adult learner at intermediate level study a short article.\n\nThe article, split into numbered sentences:\n'+
+    S.sents.slice(0,40).map(function(s,i){return (i+1)+'. '+s}).join('\n')+
+    '\n\nReply with only one JSON object in exactly this shape:\n{"summary":"two sentences in Chinese on what the article says","level":"CEFR level such as B1","sentences":[{"n":1,"zh":"natural Chinese translation"}],"vocab":[{"word":"the word or short phrase in lowercase base form","ipa":"/IPA/","pos":"n.","zh":"Chinese meaning as used in this article"}],"grammar":[{"quote":"short phrase quoted from the article","zh":"Chinese explanation of the structure in one or two sentences"}]}\nRules: exactly one "sentences" entry per numbered sentence; 8 to 12 vocab items worth learning; 3 to 5 grammar points; all explanations in Simplified Chinese.';
+}
+function applyAnalysis(d){
+    if(!d||typeof d!=='object'||!Array.isArray(d.sentences)) throw {code:'invalid_json'};
+    S.analysis={summary:String(d.summary||''),level:String(d.level||''),
+      sentences:(Array.isArray(d.sentences)?d.sentences:[]).map(function(x){return {n:+x.n,zh:String(x.zh||'')}}),
+      vocab:(Array.isArray(d.vocab)?d.vocab:[]).filter(function(x){return x&&x.word}).map(function(x){return {word:String(x.word).trim(),ipa:String(x.ipa||''),pos:String(x.pos||''),zh:String(x.zh||'')}}),
+      grammar:(Array.isArray(d.grammar)?d.grammar:[]).map(function(x){return {quote:String(x.quote||''),zh:String(x.zh||'')}})};
+    S.analysis.vocab.forEach(function(v){S.dict[v.word.toLowerCase()]={ipa:v.ipa,pos:v.pos,zh:v.zh}; addWord(v.word,true)});
+    save(); renderAnalysis(); wRender(); tShow(false); spShow();
+}
+$('#m-copy').onclick=function(){
+  var box=$('#m-prompt'), b=this; box.hidden=false; box.value=buildPrompt();
+  function done(ok){b.textContent=ok?'已复制，去 Claude 对话里粘贴':'请手动复制下面的文字'; if(!ok){box.focus(); box.select()}}
+  try{navigator.clipboard.writeText(box.value).then(function(){done(true)},function(){done(false)})}catch(e){done(false)}
+};
+$('#m-import').onclick=function(){
+  var t=$('#m-paste').value, a=t.indexOf('{'), z=t.lastIndexOf('}'), msg=$('#m-msg');
+  try{ applyAnalysis(JSON.parse(t.slice(a,z+1))); msg.className='muted small'; msg.textContent='已导入，重点词汇已加入单词练习。'; $('#m-paste').value='' }
+  catch(e){ msg.className='err small'; msg.textContent='没能读懂这段内容。请把 Claude 回复里从 { 到 } 的整段都粘贴进来。' }
+};
+$('#btn-ai-stop').onclick=function(){ if(aiCtl) aiCtl.abort() };
+function zhOf(i){ if(!S.analysis) return ''; var x=S.analysis.sentences.filter(function(s){return s.n===i+1})[0]; return x?x.zh:'' }
+function renderAnalysis(){
+  var a=S.analysis, out=$('#ai-out'); if(!a){out.innerHTML='';return}
+  var h='<p>'+(a.level?'<span class="pill">'+esc(a.level)+'</span> ':'')+esc(a.summary)+'</p>';
+  h+='<h2>逐句对照 <span class="muted small">点英文可朗读</span></h2><ol class="pairs">'+S.sents.slice(0,40).map(function(s,i){
+    return '<li><span class="n">'+(i+1)+'</span><div><div class="en" data-say="'+i+'">'+esc(s)+'</div><div class="zh">'+esc(zhOf(i))+'</div></div></li>'}).join('')+'</ol>';
+  if(a.vocab.length) h+='<h2>重点词汇</h2><div class="scroll"><table><thead><tr><th>单词</th><th>音标</th><th>词性</th><th>释义</th><th></th></tr></thead><tbody>'+a.vocab.map(function(v){
+    return '<tr><td class="wd">'+esc(v.word)+'</td><td class="ipa">'+esc(v.ipa)+'</td><td>'+esc(v.pos)+'</td><td>'+esc(v.zh)+'</td><td><button class="btn" data-word="'+esc(v.word)+'">朗读</button></td></tr>'}).join('')+'</tbody></table></div>';
+  if(a.grammar.length) h+='<h2>语法点</h2><ul class="gram">'+a.grammar.map(function(g){return '<li><q>'+esc(g.quote)+'</q><div class="muted">'+esc(g.zh)+'</div></li>'}).join('')+'</ul>';
+  out.innerHTML=h;
+}
+$('#ai-out').addEventListener('click',function(e){
+  var s=e.target.closest('[data-say]'), w=e.target.closest('[data-word]');
+  if(s) say(S.sents[+s.dataset.say]); if(w) say(w.dataset.word,Math.min(S.rate,0.85));
+});
+async function lookup(btn){
+  if(!sample||!S.pick) return; var p=S.pick; btn.disabled=true; btn.textContent='查询中…';
+  try{
+    var d=await sample.json('You are a concise English-Chinese dictionary for a Chinese learner. Word: "'+p.w+'". It appears in this sentence: "'+S.sents[p.si]+'". Reply with only a JSON object: {"ipa":"/IPA/","pos":"abbreviated part of speech such as n. or v.","zh":"its Chinese meaning in this sentence, at most 12 characters","note":"one short Chinese sentence on its usage or a common collocation"}',{modelTier:'quick'});
+    S.dict[p.w.toLowerCase()]={ipa:String(d.ipa||''),pos:String(d.pos||''),zh:String(d.zh||''),note:String(d.note||'')};
+    save(); renderWordbar(); wRender();
+  }catch(e){ var m=aiFail(e); renderWordbar(); var el=$('#look-msg'); if(el) el.textContent=m }
+}
+
+/* ---------- typing painter ---------- */
+function paint(el,target,typed,mask){
+  var h='';
+  for(var i=0;i<target.length;i++){
+    var c=target[i],cls='',show=c;
+    if(i<typed.length){var ok=typed[i]===c; cls=ok?'ok':'bad'; if(mask&&!ok) show=typed[i]}
+    else{ if(i===typed.length) cls='cur'; if(mask&&c!==' ') show='_' }
+    h+='<span class="'+cls+'">'+esc(show)+'</span>';
+  }
+  el.innerHTML=h;
+}
+function wordAt(t,j){
+  var a=j,b=j,re=/[A-Za-z'-]/; if(!re.test(t[j]||'')) return '';
+  while(a>0&&re.test(t[a-1])) a--; while(b<t.length-1&&re.test(t[b+1])) b++;
+  return t.slice(a,b+1).replace(/^['-]+|['-]+$/g,'');
+}
+
+/* ---------- article typing ---------- */
+var T={i:0,total:0,ok:0,ms:0,t0:0,prev:'',miss:{},lock:false};
+var tIn=$('#t-input');
+function tReset(speak){T={i:0,total:0,ok:0,ms:0,t0:0,prev:'',miss:{},lock:false}; $('#t-result').hidden=true; $('#t-work').hidden=false; tShow(speak)}
+function tStats(){
+  var el=T.ms+(T.t0?Date.now()-T.t0:0);
+  $('#t-wpm').textContent=el>2000?Math.round(T.ok/5/(el/60000)):'–';
+  $('#t-acc').textContent=T.total?Math.round(T.ok/T.total*100)+'%':'–';
+}
+function tShow(speak){
+  var s=S.sents[T.i]||''; T.prev=''; T.t0=0; T.lock=false;
+  $('#t-pos').textContent='第 '+Math.min(T.i+1,S.sents.length)+' / '+S.sents.length+' 句';
+  $('#t-bar').style.width=(S.sents.length?T.i/S.sents.length*100:0)+'%';
+  $('#t-platen').classList.remove('done'); tIn.value=''; tIn.maxLength=Math.max(1,s.length); $('#t-hint').textContent='';
+  paint($('#t-line'),s,'');
+  var zh=zhOf(T.i); $('#t-zh').hidden=!zh; $('#t-zh').textContent=zh;
+  tStats();
+  if(speak){ if($('#t-auto').checked) say(s); tIn.focus({preventScroll:true}) }
+}
+function tFinish(){
+  $('#t-work').hidden=true; $('#t-result').hidden=false; $('#t-bar').style.width='100%'; $('#t-pos').textContent='完成';
+  var min=T.ms/60000;
+  $('#t-final').innerHTML=stat('速度',(min>0?Math.round(T.ok/5/min):0)+' WPM')+stat('正确率',(T.total?Math.round(T.ok/T.total*100):0)+'%')+stat('用时',Math.floor(T.ms/60000)+' 分 '+Math.round(T.ms%60000/1000)+' 秒');
+  var miss=Object.keys(T.miss).sort(function(a,b){return T.miss[b]-T.miss[a]}).slice(0,12);
+  $('#t-miss').innerHTML=miss.length?'<p class="muted">打错过的词：</p><div class="chips">'+miss.map(function(w){return '<span class="chip" style="padding-right:11px">'+esc(w)+' ×'+T.miss[w]+'</span>'}).join('')+'</div><div class="row"><button class="btn" id="t-miss-add">把这些词加入单词练习</button></div>':'<p class="muted">一个词都没打错。</p>';
+  var b=$('#t-miss-add'); if(b) b.onclick=function(){miss.forEach(function(w){addWord(w,true)}); wRender(); save(); b.disabled=true; b.textContent='已加入单词练习'};
+}
+tIn.addEventListener('keydown',function(e){ if(e.key==='Enter') e.preventDefault() });
+tIn.addEventListener('input',function(e){
+  if(e.isComposing||T.lock) return;
+  var s=S.sents[T.i]||'', v=tIn.value.replace(/\n/g,''); if(v!==tIn.value) tIn.value=v;
+  if(!T.t0&&v) T.t0=Date.now();
+  var foreign=false;
+  for(var j=T.prev.length;j<v.length;j++){
+    T.total++;
+    if(v[j]===s[j]) T.ok++; else{ var w=wordAt(s,j).toLowerCase(); if(w.length>1) T.miss[w]=(T.miss[w]||0)+1; if(v.charCodeAt(j)>127) foreign=true }
+  }
+  T.prev=v; paint($('#t-line'),s,v); tStats();
+  $('#t-hint').textContent=foreign?'好像开着中文输入法，请切换到英文再打。':(v.length>=s.length&&v!==s?'有红色的地方打错了，退格改正后继续。':'');
+  if(v===s&&s){
+    T.ms+=Date.now()-(T.t0||Date.now()); T.t0=0; T.lock=true; $('#t-platen').classList.add('done'); tStats();
+    setTimeout(function(){T.i++; if(T.i>=S.sents.length) tFinish(); else tShow(true)},450);
+  }
+});
+$('#t-platen').onclick=function(){tIn.focus()};
+$('#t-say').onclick=function(){say(S.sents[T.i]||''); tIn.focus()};
+$('#t-prev').onclick=function(){ if(T.i>0){T.i--; tShow(true)} };
+$('#t-next').onclick=function(){ if(T.t0){T.ms+=Date.now()-T.t0} T.i++; if(T.i>=S.sents.length) tFinish(); else tShow(true) };
+$('#t-reset').onclick=$('#t-again').onclick=function(){tReset(true)};
+
+/* ---------- word drill ---------- */
+var W={i:0,mask:false,wrong:false,first:0,lock:false,shown:false};
+var wIn=$('#w-input');
+function hasWord(w){var k=w.toLowerCase(); return S.words.some(function(x){return x.toLowerCase()===k})}
+function addWord(w,quiet){ w=String(w).trim(); if(!w||!/^[A-Za-z][A-Za-z' -]*$/.test(w)||hasWord(w)) return; S.words.push(w); if(!quiet){wRender(); save()} }
+function wRender(){
+  if(W.i>=S.words.length) W.i=0;
+  $('#w-chips').innerHTML=S.words.map(function(w,i){return '<span class="chip'+(i===W.i?' now':'')+'">'+esc(w)+'<button aria-label="移除 '+esc(w)+'" data-rm="'+i+'">×</button></span>'}).join('');
+  var none=!S.words.length; $('#w-empty').hidden=!none; $('#w-work').hidden=none; $('#w-result').hidden=true;
+  if(!none) wShow(false);
+}
+function wShow(speak){
+  var w=S.words[W.i], d=S.dict[w.toLowerCase()]||{};
+  W.wrong=false; W.lock=false; W.shown=false; wIn.value=''; wIn.maxLength=w.length;
+  $('#w-platen').classList.remove('done'); paint($('#w-line'),w,'',W.mask);
+  $('#w-meta').innerHTML=(d.ipa&&!W.mask?'<span class="ipa">'+esc(d.ipa)+'</span> ':'')+(d.zh?esc((d.pos?d.pos+' ':'')+d.zh):(W.mask?'<span class="muted">听发音，把词打出来</span>':''));
+  $('#w-pos').textContent=(W.i+1)+' / '+S.words.length;
+  $('#w-reveal').hidden=!W.mask;
+  document.querySelectorAll('#w-chips .chip').forEach(function(c,i){c.classList.toggle('now',i===W.i)});
+  if(speak){say(w,Math.min(S.rate,0.85)); wIn.focus({preventScroll:true})}
+}
+function wNext(){
+  W.i++;
+  if(W.i>=S.words.length){
+    $('#w-work').hidden=true; $('#w-result').hidden=false;
+    $('#w-score').textContent='这一轮 '+S.words.length+' 个词，一次打对 '+W.first+' 个';
+    W.i=0; W.first=0; return;
+  }
+  wShow(true);
+}
+wIn.addEventListener('input',function(e){
+  if(e.isComposing||W.lock) return;
+  var w=S.words[W.i], v=wIn.value;
+  for(var j=0;j<v.length;j++) if(v[j]!==w[j]) W.wrong=true;
+  paint($('#w-line'),w,v,W.mask&&!W.shown);
+  if(v===w){ if(!W.wrong) W.first++; W.lock=true; $('#w-platen').classList.add('done'); setTimeout(wNext,500) }
+});
+wIn.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault()} });
+$('#w-platen').onclick=function(){wIn.focus()};
+$('#w-say').onclick=function(){say(S.words[W.i],Math.min(S.rate,0.85)); wIn.focus()};
+$('#w-reveal').onclick=function(){W.shown=true; W.wrong=true; paint($('#w-line'),S.words[W.i],wIn.value,false); wIn.focus()};
+$('#w-skip').onclick=function(){wNext()};
+$('#w-again').onclick=function(){$('#w-result').hidden=true; $('#w-work').hidden=false; W.i=0; W.first=0; wShow(true)};
+function setMask(m){W.mask=m; $('#w-look').setAttribute('aria-pressed',String(!m)); $('#w-dict').setAttribute('aria-pressed',String(m)); if(S.words.length&&!$('#w-work').hidden) wShow(true)}
+$('#w-look').onclick=function(){setMask(false)}; $('#w-dict').onclick=function(){setMask(true)};
+$('#w-chips').addEventListener('click',function(e){
+  var r=e.target.dataset&&e.target.dataset.rm; if(r==null) return;
+  S.words.splice(+r,1); if(W.i>+r) W.i--; save(); wRender();
+});
+function wAddManual(){var i=$('#w-add'); addWord(i.value.toLowerCase()); i.value=''}
+$('#w-add-btn').onclick=wAddManual;
+$('#w-add').addEventListener('keydown',function(e){ if(e.key==='Enter') wAddManual() });
+
+var RES_RAW="#新闻与短文（找文章来练）\nBreaking News English|https://breakingnewsenglish.com/|分级新闻文章\nNews in Levels|https://www.newsinlevels.com/|多难度级别新闻\nVOA 慢速英语|https://learningenglish.voanews.com/|简化版新闻\nEnglish News in Levels|https://englishnewsinlevels.com/|为学习者提供分级世界新闻\nEasy English News|https://www.easyenglishnews.com/|简单英语新闻，附音频和习题\nEnglish Current|https://www.englishcurrent.com/|带词汇解释的新闻文章\n简明英语维基|https://simple.wikipedia.org/wiki/Main_Page|易于理解的维基百科\nReadWorks|https://www.readworks.org/|海量分级阅读文章\nBuzzing|https://www.buzzing.cc/|全球热门新闻双语速览\nFrontiers for Young Minds|https://kids.frontiersin.org/|B1–B2 难度的科普文章\n100 Word Story|https://100wordstory.org/|极短篇故事\nEnglish Short Stories for Beginners|https://www.english-for-students.com/Short-Stories.html|专为学习者写的短文\nAmerican Literature|https://americanliterature.com/|经典文学作品，语法用词简单\nEnglish e-Reader|https://english-e-reader.net/|免费英语分级读物\nLongreads|https://longreads.com/|长篇优质文章\nChinese Culturepedia|https://culturepedia.chinadaily.com.cn/#/homePage|边学英语边了解中国文化\n#听力播客\nBBC Learning English|https://www.bbc.co.uk/learningenglish|BBC 官方英语学习播客\n6 Minute English|https://www.bbc.co.uk/learningenglish/english/features/6-minute-english|简短高效的英语课程\nVOA Learning English|https://learningenglish.voanews.com/podcasts|美国之音的美式英语播客\nA.J. Hoge|https://www.youtube.com/@AJHogeEffortlessEnglish|基础词汇，语速和发音都很友好\nAll Ears English|https://www.allearsenglish.com/|面向中高级学习者的 ESL 播客\nSpeak English With Tiffani|https://www.youtube.com/@SpeakEnglishWithTiffani|英语学习方法和小技巧\nESL Pod|https://www.eslpod.com/|清晰慢速的英语对话\nLEP|https://www.youtube.com/@LEP-LearnEnglishPodcast|为 A2+ 和 B1 设计，每期十来分钟\nCloud English|https://www.youtube.com/@CloudEnglish/featured|语速适中，适合初学者\nCoffee Break English|https://coffeebreaklanguages.com/english/|每集约 15 分钟，初中级\nLuke's English Podcast|https://teacherluke.co.uk/|专业英语教师主讲\nPodcasts in English|https://www.podcastsinenglish.com/index.shtml|数百集免费节目，分等级\nEnglish Learning for Curious Minds|https://www.leonardoenglish.com/podcasts|面向中高级，讲世界上的故事\nListening Time|https://open.spotify.com/playlist/0KktOlffEGngLS63SHp5v7|语速缓慢，适合新手\nlearnenglishpod|https://learnenglishpod.com/|多种课程和讨论\nCulips ESL Podcast|https://esl.culips.com/|英语教师制作，轻松有趣\nBusiness English Pod|https://www.youtube.com/@BusinessEnglishPod|各种商务英语\nEspresso English Podcast|https://open.spotify.com/show/3apZ4F9LH9oI6DIjiQl6zR|针对 ESL 学习者的常见问题\nSpeak English With Class|http://youtube.com/@speakenglishwithclass|播客风格的免费视频\nEasy English Podcast|https://open.spotify.com/show/0zdSWbiJYKbWfhHrizj5wA|循序渐进、内容轻松\nSimple English|https://www.youtube.com/@simpleenglishforbeginners|轻松高效的学习技巧\nDan Koe|https://www.youtube.com/@dankoetalks|个人发展、生产力和创业\nMel Robbins|https://www.youtube.com/@melrobbins|励志演说家，可执行的建议\n#口语练习\nChatGPT|https://chatgpt.com/|用高级语音功能做口语对话\nGrok|https://x.ai/grok|有高级语音功能的 AI 工具\nSpeak English With Vanessa|https://www.youtube.com/@SpeakEnglishWithVanessa/videos|发音技巧，自然交谈\nAccurateEnglish|https://www.youtube.com/@AccurateEnglish|专业发音训练\nSpeechling|https://speechling.com/zh/|获取发音反馈\nSmallTalk2Me|https://smalltalk2.me/|AI 驱动的口语练习\nYouglish|https://youglish.com/|在 YouTube 片段里听单词的真实发音\nConversation Exchange|https://www.conversationexchange.com/|免费语言交换平台\niTalki|https://www.italki.com/zh-cn|找外教一对一\nCambly|https://www.cambly.com/english?lang=zh_CN|与母语者练口语\nTandem|https://www.tandem.net/|语言交换应用\nHelloTalk|https://www.hellotalk.com/|寻找语言伙伴\nDuolingo|https://www.duolingo.com/|含发音练习和实时反馈\ncharacter.ai|https://character.ai/|和 AI 角色对话\n发音技巧舌位图解|https://www.bilibili.com/video/BV1Ji4y1P7Lu/|有具体舌位图\n#YouTube 频道\nRachel's English|https://www.youtube.com/user/rachelsenglish|专注发音教学\nEnglish with Lucy|https://www.youtube.com/c/EnglishwithLucy|人气英语教学\nBBC Learning English|https://www.youtube.com/user/bbclearningenglish|BBC 官方教学\nTED|https://www.youtube.com/@TED|英语演讲\nTED-Ed|https://www.youtube.com/@TEDEd|动画短片，学英语涨知识\nSlow English With Brian|https://www.youtube.com/@slowenglishwithbrian|慢速清晰，备考 TOEIC 口语\n星荣英语笔记|https://www.youtube.com/@xingrong-english/featured|零基础英语课程\nEnglish At The Ready|https://www.youtube.com/@englishattheready|Michael 老师讲英语知识\nEnglish by Jay|https://www.youtube.com/@englishbyjay.official|生活 Vlog 学英语\nPensando Inglés|https://www.youtube.com/@pensandoingles6884|可理解输入\nSimple English Text|https://www.youtube.com/@simpleenglishtext|难度很低的播客视频\nEnglishClass101|https://www.youtube.com/user/ENGLISHCLASS101|系统化课程\nEngFluent|https://www.youtube.com/@engfluenttv|帮非母语者提升口语表达\nLearn English with TV Series|https://www.youtube.com/c/LearnEnglishWithTVSeries|通过美剧学英语\nmmmEnglish|https://www.youtube.com/@mmmEnglish_Emma|澳大利亚英语，实用口语\nENGLISH with James|https://www.youtube.com/@engvidJames|语法和学术写作\nEnglish with Emma|https://www.youtube.com/@engvidEmma|美式日常英语，地道表达\nLearn English with Rebecca|https://www.youtube.com/@engvidrebecca|语法、词汇、发音、商务、考试\nEnglishAnyone|https://www.youtube.com/@EnglishAnyone|板书教流利口语\nEnglish Like A Native|https://www.youtube.com/@EnglishLikeANative|英式发音，文化习语\nE2 IELTS|https://www.youtube.com/@E2IELTS|IELTS 考试技巧\nABC Learning English|https://www.youtube.com/@ABCLearningEnglish|各种学习素材\nEnglish Speaking Success|https://www.youtube.com/@englishspeakingsuccess|英式发音，雅思口语，A2–B1\nEnglish Speeches|https://www.youtube.com/@EnglishSpeeches/featured|带字幕的英语演讲\n终身学外语|https://www.youtube.com/@practicemakesfluent|适合反复听的对话练习\nChina Zone|https://www.youtube.com/@ChinaZone-English/featured|英语配音的中国电视剧\nStarTimes Selected TV|https://www.youtube.com/@StarTimesSelectedTv/featured|英语配音的中国电视剧\n4000 Essential English Words|https://www.youtube.com/@4000EssentialEnglishWords/featured|词汇提升方法\n跟着小番茄学外语|https://www.youtube.com/@MsTomato/featured|常见句子，中英对照朗诵\n肯德拉语言学校|https://www.youtube.com/@KendrasLanguage/featured|易于练习的学习材料\n空中英語教室雜誌|https://www.youtube.com/@SCStudioclassroomCom/featured|生活会话、幽默短剧\nCool English|https://www.youtube.com/@CooEnglish/featured|多样对话场景和地道表达\nEasy English|https://www.youtube.com/@easyenglish551/featured|各种话题的对话\nEnglish Comprehensible|https://www.youtube.com/@ComprehensibleEnglish/featured|自然习得、沉浸式学习\nEnglish Conversation|https://www.youtube.com/@Daily-English-Conversation/featured|非常易懂的对话\nDaily English Conversation|https://www.youtube.com/@DailyEnglishConversation|日常对话磨耳朵\nEnglish Fluency Journey|https://www.youtube.com/@EnglishFluencyJourney/featured|Anna 老师帮你改善口音\nEnglish Speaking Course|https://www.youtube.com/@EnglishSpeakingCourses/featured|日常情境对话\n英语兔|https://www.youtube.com/@yingyutu/featured|适合应试的英语知识\nClub James Studios|https://www.youtube.com/@ClubJamesStudios/featured|英语语法教程\nBrat TV|https://www.youtube.com/@brat/featured|口语情景影视，用词不复杂\nBrian Wiles|https://www.youtube.com/@BrianWilesQuizzes/featured|学习技巧和英语知识\nCool History Bros|https://www.youtube.com/@CoolHistoryBros/featured|英语动画讲神话和历史\nSteve Kaufmann|https://www.youtube.com/@thelinguist|会 20 种语言的老爷子讲怎么学语言\nInglês Essencial|https://www.youtube.com/c/Ingl%C3%AAsEssencial/featured|有声英语电子书\nJim Rohn Motivation|https://www.youtube.com/@jimrohnmotivationvideos|语句不复杂的励志演讲\nQuotes|https://www.youtube.com/@quotes_official|英语引言\n通过故事学习英语|https://www.youtube.com/@wooenglish|A1–C2 各级别英语故事\nEnglish Speaking 360|https://www.youtube.com/@englishspeaking360|加拿大认证教师讲语法、词汇、写作\n口语老炮儿马思瑞|https://www.youtube.com/@LaomaChris|英语学习方法技巧\nStanford Graduate School of Business|https://www.youtube.com/@stanfordgsb|商业思维、沟通技巧、职场英语\n布鲁斯法则|https://www.youtube.com/@followbruce|国人怎样学英语\n英语调音师 Jerry|https://www.youtube.com/@jerryenglishremix|英语学习干货\nABC Education|https://www.youtube.com/@ABCEducation|高质量英语教育内容\nCrown Academy of English|https://www.youtube.com/@CrownAcademyEnglish|纯英免费课程\nLearning Phrases with Chris|https://www.youtube.com/@LearningPhrases|通过短语学英语\nProfessor Dave Explains|https://www.youtube.com/@ProfessorDaveExplains|简明英语讲科学和数学\nFeel Real Good|https://www.youtube.com/@feelrealgood|生活思维与心智模型\nLeonardo English|https://www.youtube.com/@leonardoenglishcom|学英语的同时了解奇闻趣事\nLITTLE BIT BETTER|https://www.youtube.com/@littlebitbetter7|商业和生活思维，语速快，C1 以上\nExplainify why|https://www.youtube.com/@explainify67|边学英语边涨知识\nTechquickie|https://www.youtube.com/@techquickie|学英语涨科技小知识\nThe Angry Explainer|https://www.youtube.com/@theangryexplainer|毒舌风格讲学习方法\nProfessor Lao|https://www.youtube.com/@profe_lao|真实美式英语教学\nWannaspeak by Veroniq|https://www.youtube.com/@wannaspeakbyveroniq|学习策略与心态建设\nARC English|https://www.youtube.com/@arcenglish|帮中高级学习者突破瓶颈\nBritish Council English|https://www.youtube.com/@britishcouncilenglish|微课和 20 多分钟深度节目\nAudioBook Spot|https://www.youtube.com/@audiobookspot1|励志和个人成长有声书\nEnglish TV|https://www.youtube.com/@englishtvhd|免费综合性英语教育资源\nJulian Northbrook|https://www.youtube.com/@juliannorthbrook|英式发音博主教你说好英语\nRealLife English|https://www.youtube.com/@reallifeenglish1|走出教室开口说英语\nWISE JOE|https://www.youtube.com/@WISE-JOE1|火柴人动画讲原创思想内容\nThe English Class|https://www.youtube.com/@TheEnglishClass2917|英语学习技巧方法\nVolka|https://www.youtube.com/@volkaenglish|可理解输入教学\n#学习视频\nExtra English|https://www.youtube.com/playlist?list=PLdYSWqTrWP2jyqWIdjsATbrb11uN_BMrF|《老友记》式情景喜剧教学节目\n西游记英文版|https://www.youtube.com/playlist?list=PLOHG5PB2LOcizYqruRC9KHm3AA6IjbfN5|官方英文版，语速用词友好\nEnglish Conversation Very Funny|https://www.youtube.com/playlist?list=PLzQug2pV17x8hSMkFr0B8SaFp3HbxQHS3|有趣的情景喜剧，共三集\nReal English Conversation|https://www.youtube.com/watch?v=tmionzqiRHY&list=PLzQug2pV17x-KDtTBMdU1_0XXxkGvQeVD|初级情景对话教学\nEnglish Conversation（初学者）|http://youtube.com/playlist?list=PLzVm1SmjPKc_OnC56MbILOmdXvGV_3kE9|适合初学者的情景对话\n如何用英语思考，建立你的英语大脑|https://www.bilibili.com/video/BV1TD4y1q7u9/|不翻译直接说英语\n颠覆你对英语学习的认知：总述·阅读篇|https://www.bilibili.com/video/BV1aD4y127GE|可理解输入的重要性\n颠覆你对英语学习的认知：听说篇|https://www.bilibili.com/video/BV1tf4y1s7NN/|解答语言学习的常见问题\n5天記住1萬個單詞的方法|https://www.youtube.com/watch?v=AFgZbU3AhlY|用创造语言的思维学语言\n新概念英语第一册|https://www.youtube.com/watch?v=Sj3WqZu4P0E&list=PL7QPSCAroBojgp9-X2Dv8gPpFhHLcqvKF|讲师：霍娜老师\n新概念英语第二册|https://www.youtube.com/watch?v=SF8F62duryA&list=PL7QPSCAroBog_u72arS00YtJDBX0bFnXa|讲师：田静老师\n新概念英语第三册|https://www.youtube.com/watch?v=GKPNUd33ca8&list=PL7QPSCAroBoi8lh1Nis2P8s-Kez06mjue|讲师：李延隆老师\n新概念英语第四册|https://www.youtube.com/watch?v=SHH5tDljf5M&list=PL7QPSCAroBoguruChBG0rzSnvvn4MHAan|讲师：李延隆老师\n美中小学原版教材精讲|https://www.bilibili.com/video/BV1x7411j7ER|B1 以下练听力\n英语电话号码听力练习|https://www.youtube.com/watch?v=RUX9YlEbenI|电话号码听力训练\n如何用英语读出所有数字|https://www.youtube.com/watch?v=VYeBYn970a8|大数字、小数、日期、分数、序数\n1-10000 数字训练|https://www.youtube.com/watch?v=od_1wzUk1cU|总时长 12 小时\n#科技播客\nSyntax.fm|https://syntax.fm/|通俗易懂的 Web 开发讲解\nTechCrunch Podcast|https://techcrunch.com/podcast|最新科技新闻\nThis Week in Tech|https://twit.tv/shows/this-week-in-tech|每周科技话题讨论\nClockwise|https://www.relay.fm/clockwise|节奏快、时效性强\nCode Story|https://codestory.co/|做出世界级科技产品的起落\nWSJ Tech News Briefing|https://www.wsj.com/podcasts/tech-news-briefing|华尔街日报每日科技新闻\nDaily Tech News Show|https://dailytechnewsshow.com/category/episode/|当天最重要的科技新闻\n20VC with Harry Stebbings|https://www.youtube.com/@20vc|与顶尖投资人、企业家对话\nTim Ferriss|https://www.youtube.com/@timferriss|采访各领域顶级人物\n#访谈与脱口秀\nTED Radio Hour|https://www.npr.org/programs/ted-radio-hour/|发人深省的访谈节目\nLex Fridman|https://www.youtube.com/@lexfridman|访谈各行各业的大佬\nDesert Island Discs|https://www.bbc.co.uk/programmes/b006qnmr|BBC 经典访谈节目\nPowerfulJRE|https://www.youtube.com/@joerogan|2–3 小时的深度对话\nAndrew Huberman|https://www.youtube.com/@hubermanlab/featured|科学又通俗的知识传播\nTom Bilyeu|https://www.youtube.com/@TomBilyeu|成功人士的故事和经验\nH3 Podcast|https://www.youtube.com/@H3Podcast|网红、艺人和网络文化人物\nFirst We Feast|https://www.youtube.com/@FirstWeFeast|边吃辣翅边访谈\nThe Graham Stephan Show|https://www.youtube.com/@TheGrahamStephanShow|金融界人士和创业者访谈\nGaryVee|https://www.youtube.com/@garyvee|创业、营销、个人品牌\nBig Think|https://www.youtube.com/@bigthink|短格式的思想领袖访谈\nBreakfast Club|https://www.youtube.com/@BreakfastClubPower1051FM|嘻哈文化和娱乐新闻\nThe Late Show with Stephen Colbert|https://www.youtube.com/@ColbertLateShow|幽默剖析新闻和社会热点\nThe Daily Show|https://www.youtube.com/c/TheDailyShow|政治讽刺类脱口秀\nThe Tonight Show Starring Jimmy Fallon|https://www.youtube.com/c/fallontonight|名人采访和搞笑游戏\nJimmy Kimmel Live|https://www.youtube.com/c/JimmyKimmelLive|名人采访和搞笑短片\nTeam Coco|https://www.youtube.com/c/TeamCoco|柯南·奥布莱恩的脱口秀和播客\nLastWeekTonight|https://www.youtube.com/@LastWeekTonight|深入剖析社会议题\n#电台与视频网站\nNPR|https://www.npr.org/|新闻、文化、科技，有优质播客和文字稿\nBBC Radio|https://www.bbc.co.uk/sounds|多个频道，多为英式英语\nABC Radio|https://www.abc.net.au/listen/radio|澳大利亚英语\nWNYC|https://www.wnyc.org/|纽约公共电台\nRadio New Zealand|https://www.rnz.co.nz/radio|新西兰国家电台\nRadio Garden|https://radio.garden/settings|全球广播电台\nTuneIn Radio|https://tunein.com/|汇集全球电台\nAudacy（Radio.com）|https://www.audacy.com/|美国主流电台集合\niHeartRadio|https://www.iheart.com/|大量直播电台和播客\nESPN Radio|https://www.espn.com/espnradio/|体育新闻、评论和直播\nOneStop Radio|https://theonestopradio.com/|190 多个国家的电台\nWorld's Radio|https://www.worldsradio.com/|全球在线广播\nTV garden|https://tv.garden/|收看各国电视台\nNetflix|https://www.netflix.com/|订阅制，英文影视和字幕\nAmazon Prime Video|https://www.primevideo.com/|订阅制，英文电影和原创内容\nYouTube 影视专区|https://www.youtube.com/feed/storefront|可免费观看的影视\nPlex|https://watch.plex.tv/|免费英文电影和电视节目\nVoiceTube|https://www.voicetube.com/|看视频学英语，双语字幕和难度分级\nCrash Course|https://thecrashcourse.com/|历史、科学、文学等学科的教育视频\n#读物与漫画\nobooko|https://www.obooko.com/|免费英语书籍\nLibriVox|https://librivox.org/|免费有声书\nESL Bits|https://esl-bits.eu/home.html|英语有声书\nHoopla|https://www.hoopladigital.com/|有声书、电子书、漫画\nBilinguis|http://zh.bilinguis.com/book/|双语阅读，词汇简单\nTypeLit|https://www.typelit.io/|照着文学作品练打字\n英语小说网|https://yingyuxiaoshuo.com|读小说学英语\nPoopfiction|https://readpoopfiction.com/|随机生成的英语短故事\nWuxiaworld|https://www.wuxiaworld.com/|中国网络文学英译\nWebnovel|https://www.webnovel.com/|大量英文网络小说\n人人都能用英语|https://github.com/ZuodaoTech/everyone-can-use-english|李笑来的开源书\n新概念学习笔记分享|https://github.com/andylee1890/NewConceptEnglish|新概念学习资料整理\nMonkeyPen|https://monkeypen.com/|免费英语绘本\nBook Dash|https://bookdash.org/books/|各类英文绘本\nTapas|https://tapas.io/|独立创作者网络漫画\nWebtoon|https://www.webtoons.com/en/|网络漫画平台\nManga Plus|https://mangaplus.shueisha.co.jp/updates|日漫英文平台，免费阅读\n#网页小游戏\nGames to Learn English|https://www.gamestolearnenglish.com/|词汇、语法、听力小游戏\nESL Games|https://www.eslgamesplus.com/|互动游戏练英语\nztype|https://zty.pe/|英语打字射击游戏\nKnoword|https://knoword.com/|词汇游戏\nVisual Thesaurus Spelling Bee|https://www.visualthesaurus.com/bee/play|听单词并拼写\n小小炼金术 2|https://littlealchemy2.com/|元素组合学词汇\nInfinite Craft|https://neal.fun/infinite-craft/|组合元素创造新事物\nHelpful Games|https://www.helpfulgames.com/subjects/english/|听说读写小游戏\nHuman Brain Cloud|https://www.humanbraincloud.com/|多人词语联想游戏\nTriviaduel|https://www.triviaduel.com/|免注册的全英文知识问答\nUltra Land|https://ultraland.app/zh-CN|翻译句子与全球玩家竞争\nWord Whomp|https://www.pogo.com/|快速拼出尽可能多的单词\nABCMouse|https://www.abcmouse.com/games|面向儿童的教育游戏\nitch.io|https://itch.io/|大量英语游戏\n#学习网站\nRun To English|https://www.runtoenglish.com/|以新概念英语为核心的学习平台\nAI 学习新概念英语|https://learnenai.com/|词汇、语法句型解析，中英对照\n新概念英语导航|https://nce.ichochy.com/|全四册在线课文朗读\nEnglish Reader|https://read.english-reader.com/|查词、朗读、翻译、生词管理\nengoo|https://engoo.com/app/materials/en|按等级和兴趣找教材课程\nLetMeEnglish|https://letmeenglish.com/zh-hans/|免费内容和练习资源\nEnglishBanana|https://www.englishbanana.com/|4000 多页免费可打印资源\nEAP Foundation|https://www.eapfoundation.com/|学术英语\n英语语法网|http://www.yygrammar.com/|清晰的语法讲解\n玄元祐语法|https://grammar.codeyu.com/|应试语法写作\n英语提升指南|https://vvyst0z7tes.feishu.cn/wiki/HQuawZepyiwNiNkImw6c00IXnmc|基于克拉申理论的自学路径\n人生进阶指南|https://github.com/byoungd/up|AI 时代终身学习指南\n面试中的英语|https://github.com/Interview-Science/interview-english|English for Tech Interview\n程序员雅思备考指南|https://ethan-lin.gitbook.io/ielts|备考思路和资料\nAtomic Learning|https://en.atomiclearning.app/|每天一段听力，可调速度\n音客|https://yinke.jinguizi07.cn/landing|听写和复述训练\nLingoclip|https://lingoclip.com/|通过音乐学语言\nLingoHut|https://www.lingohut.com/zh|用母语学 45 种以上语言\nLanguageGuide|https://www.languageguide.org/cn/|交互式语音词汇指南\nProgressive Phonics|https://www.progressivephonics.com/|免费的儿童阅读和拼写教学\nWordsFunny|https://wordsfunny.com/BeiShiGaoZhong_4/words|整合教材和考试词汇\n英语台词社|https://www.taicishe.com/|电影和美剧台词\n#词典与工具\nMerriam-Webster|https://www.merriam-webster.com|释义、发音和词源\nVocabulary.com|https://www.vocabulary.com/|词汇测试、例句和学习工具\nVisuwords|https://visuwords.com/|图形化展示词语关系\nFineDictionary|https://www.finedictionary.com/|小众文艺范词典\nQuizlet|https://quizlet.com/cn|制作和分享词卡\nAnki|https://apps.ankiweb.net/|间隔重复记忆软件\nPlayPhrase|https://www.playphrase.me/|搜电影片段学短语\nGetYarn|https://getyarn.io/|搜影视台词片段\n巴别英语|https://www.babelabc.com/|精选影视片段学口语\nLanguage Reactor|https://www.languagereactor.com/|看视频时的语言学习插件\nYouTube 双语字幕|https://chromewebstore.google.com/detail/imeedihedcjeieaokdpgandbgpjmadoh|YouTube 双语字幕插件\nDashPlayer|https://dash-player.solidspoon.xyz/|为英语学习者做的视频播放器\nFreeSubtitles|https://freesubtitles.ai/|免费生成视频字幕\nEnjoy|https://1000h.org/|开源 AI 英语助教\nEnpuz|https://enpuz.com/|在线句子语法分析\nGrammarly|https://www.grammarly.com/|写作辅助，查语法拼写\nProWritingAid|https://prowritingaid.com/|写作润色\nOnlineCorrection|https://www.onlinecorrection.com/|在线语法检查\nLexile|https://hub.lexile.com/|按蓝思指数找合适难度的读物\nFind a Book|https://hub.lexile.com/find-a-book/|按水平和兴趣找书\nReadu|https://readu.io/readupedia/|各年龄段的书籍和故事\nTasteDive|https://tastedive.co|按喜好推荐相似的影视和书\n#B 站\n张俊杰老师|https://space.bilibili.com/3546754674854765|\n考研英语田静|https://space.bilibili.com/526106597|\nJackyangMiao|https://space.bilibili.com/12359115|\n赖世雄讲英语|https://space.bilibili.com/1322170180|\n英语兔|https://space.bilibili.com/483162496|\n罗肖尼Shawney|https://space.bilibili.com/323794482|\n英语的平行世界|https://space.bilibili.com/388576777|";
+/* ---------- daily article ---------- */
+var DAILY=[
+['日常生活','A Small Morning Habit',SAMPLE],
+['商务邮件','Following Up After a Trade Show',"Dear Mr. Hassan,\n\nIt was a pleasure to meet you at our booth in Dubai last week. As promised, I am sending our latest catalogue and the price list for the metal frames you liked.\n\nThe minimum order is three hundred pieces per style, and samples can be shipped within five days. If you tell me which models interest you most, I will prepare a detailed quotation.\n\nPlease let me know if you have any questions. I look forward to working with you.\n\nBest regards,\nAnna"],
+['新闻报道','City Opens Its First Night Library',"A small city in the north opened its first night library on Monday. The building stays open until two in the morning, and anyone with a library card can walk in.\n\nOfficials say the idea came from students who had nowhere quiet to study after dark. In the first week, more than four thousand people visited. Some came to read, others simply to sit in a warm, bright room.\n\nThe mayor called it an experiment. If it works, two more libraries will follow next year."],
+['科普','Why We Forget Our Dreams',"Most people forget their dreams within minutes of waking up. Scientists believe this happens because the parts of the brain that store new memories are less active while we sleep. A dream may feel vivid, but it is rarely saved.\n\nIf you want to remember one, keep still for a moment after you wake, and replay the story in your mind before you reach for your phone. Writing down even a few words helps. Over time, you may find that you remember more and more."],
+['旅行对话','Checking In at a Hotel',"Good evening. I have a reservation under the name Chen, for three nights.\n\nWelcome, Ms. Chen. May I see your passport, please? Thank you. You are in room 814, on the eighth floor, with a view of the river.\n\nThat sounds lovely. What time is breakfast served?\n\nFrom half past six until ten, in the restaurant on the second floor. Would you like a wake-up call?\n\nYes, please, at seven. And could I have a late checkout on Friday?\n\nLet me check. Yes, we can extend it until two in the afternoon at no extra charge."],
+['求职面试','Tell Me About Yourself',"Thank you for inviting me today. I have worked in international education for eight years, helping students choose schools and prepare their applications.\n\nIn my current role I manage a region with several large cities, so I spend much of my time talking with families, training new advisors, and solving problems before they grow. What I enjoy most is turning a confusing process into a clear plan.\n\nI am looking for a position where I can use that experience on a larger scale, and where I can keep learning from people who are better than I am."],
+['演讲','The Courage to Begin',"We often believe that confident people feel no fear. That is not true. They feel it, and they begin anyway.\n\nThink about the first time you spoke English to a stranger. Your heart was beating fast, and the words came out slowly. But you were understood, and something changed. The next time was easier.\n\nProgress rarely arrives as a great leap. It comes as a small step, repeated on days when nobody is watching. So do not wait until you are ready. Begin badly, and let practice do the rest."],
+['健康','The Ten-Minute Walk',"You do not need a gym to feel better. A ten-minute walk after a meal is one of the simplest habits you can build.\n\nWalking helps the body use the sugar from your food, and it gives the mind a short break from screens. Many people notice that they sleep more deeply and feel less tired in the afternoon.\n\nThe secret is to make it easy. Leave your shoes by the door. Walk the same route. Invite someone you like. After a few weeks, staying inside will feel stranger than going out."],
+['科技','Talking to Machines',"A few years ago, asking a computer for help meant typing exact keywords and hoping for the best. Today we can simply explain what we want, the way we would to a colleague.\n\nThis change sounds small, but it matters. People who could never write code can now build simple tools. Students can ask the same question five different ways until the answer makes sense.\n\nThe skill that matters most is no longer memorizing commands. It is describing a problem clearly, checking the result, and knowing when the machine is wrong."],
+['外贸谈判','Negotiating a Better Price',"Thank you for your offer. We like the quality of your samples, but the price is higher than we expected.\n\nI understand. May I ask what quantity you are planning to order?\n\nAround two thousand pieces for the first shipment, and more if the market responds well.\n\nIn that case, we can offer a five percent discount, provided that you confirm the order this month. We can also include custom packaging at no extra cost.\n\nThat is helpful. Could you also shorten the delivery time to thirty days?\n\nLet me speak with our factory and reply by tomorrow."],
+['教育','Choosing a School Abroad',"Choosing a school abroad is not only about rankings. A famous name looks impressive, but the daily experience matters more.\n\nStart with the student. Does she learn best in small classes or large ones? Does he need structure, or freedom to explore? Then look at the details: the size of the town, the support for international students, and the cost of living.\n\nFinally, talk to people who have studied there. A ten-minute conversation with a current student often tells you more than a beautiful brochure ever could."],
+['理财','The Price of Waiting',"Many people plan to start saving when they earn more. The problem is that expenses tend to grow together with income, so the right moment never comes.\n\nA better approach is to begin with a small amount and make it automatic. Even a little money, set aside every month, can grow over many years because the returns are added to the original sum and then earn returns themselves.\n\nNobody can predict the market, and every investment carries risk. But time is the one advantage that cannot be bought later."],
+['寓言','The Two Gardeners',"Two neighbors each planted a tree on the same spring day. The first watered his tree every morning and measured it every night. When it grew slowly, he became angry and pulled at its branches.\n\nThe second gave her tree water when the soil was dry, and then she left it alone. She had other work to do.\n\nYears later, one garden had a wide, quiet tree with birds in it. The other had only a stick and a tired man. Care is necessary, the old people say, but so is patience."],
+['文化','Why the British Talk About the Weather',"Visitors to Britain often notice that strangers love to talk about the weather. It is not because the weather is exciting. It is because the weather is safe.\n\nA comment about the rain asks for nothing and offends nobody. It simply says, I am friendly, and I am willing to talk. If the other person answers warmly, the conversation can move on to something more personal.\n\nEvery culture has its own way of opening a door politely. In Britain, the key just happens to be a grey sky."]
+];
+var GENRES=[['news report','新闻报道'],['business email','商务邮件'],['popular science explainer','科普'],['travel dialogue','旅行对话'],['short speech','演讲'],['opinion piece','观点短文'],['short story','小故事'],['workplace conversation','职场对话']];
+function todayKey(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function dayIndex(){var d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000)}
+function dailyPick(){
+  if(S.daily&&S.daily.date===todayKey()&&S.daily.text) return S.daily;
+  var a=DAILY[dayIndex()%DAILY.length]; return {genre:a[0],title:a[1],text:a[2],src:'内置文章'};
+}
+function renderDaily(){
+  var d=dailyPick(), news=RES_CATS[0].items, site=news[dayIndex()%Math.min(8,news.length)];
+  $('#d-date').textContent=todayKey(); $('#d-genre').textContent=d.genre; $('#d-src').textContent=d.src||'';
+  $('#d-title').textContent=d.title;
+  $('#d-text').innerHTML=d.text.split(/\n+/).map(function(p){return '<p>'+esc(p)+'</p>'}).join('');
+  $('#d-site').textContent=site.n; $('#d-site').href=site.u; $('#d-site-desc').textContent=site.d;
+  $('#d-new').hidden=!sample; $('#d-new').textContent='让 '+AI_NAME+' 另写一篇';
+}
+$('#d-use').onclick=function(){stopAll(); loadText(dailyPick().text); S.dailyDone=todayKey(); save(); if(sample) aiReady(); showTab('read')};
+$('#d-new').onclick=async function(){
+  if(!sample) return; var b=this, msg=$('#d-msg'), g=GENRES[Math.floor(Math.random()*GENRES.length)];
+  b.disabled=true; msg.className='small muted'; msg.textContent=AI_NAME+' 正在写…';
+  try{
+    var d=await sample.json('Write an original English text for a Chinese adult learner at B1-B2 level to read aloud and type. Genre: '+g[0]+'. Length: 110 to 140 words, in 2 to 4 short paragraphs. Use natural, modern English, plain ASCII punctuation only, no headings and no lists. Do not copy any existing text. Reply with only a JSON object: {"title":"a short title","text":"the text, paragraphs separated by \\n\\n"}',{cache:false});
+    if(!d||!d.text||!(String(d.text).match(WORD_RE)||[]).length) throw {code:'invalid_json'};
+    S.daily={date:todayKey(),genre:g[1],title:String(d.title||'Today'),text:String(d.text),src:AI_NAME+' 写的'}; save(); renderDaily(); msg.textContent='';
+  }catch(e){ var m=aiFail(e); msg.textContent=m; if(m) msg.className='small err' }
+  b.disabled=false;
+};
+
+/* ---------- speaking ---------- */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+var SP_RE=/([A-Za-z0-9]+(?:'[A-Za-z]+)?)/;
+var P={i:0,scores:{},rec:null,on:false,miss:[],blocked:false};
+function spWords(s){return s.toLowerCase().split(SP_RE).filter(function(t,k){return k%2})}
+function spAlign(t,h){
+  var n=t.length,m=h.length,d=[],i,j;
+  for(i=0;i<=n;i++){d[i]=[];for(j=0;j<=m;j++)d[i][j]=0}
+  for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)d[i][j]=t[i]===h[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
+  var hit=[],map=[];i=0;j=0;
+  while(i<n&&j<m){ if(t[i]===h[j]){hit[i]=true;map[i]=j;i++;j++} else if(d[i+1][j]>=d[i][j+1]) i++; else j++ }
+  return {hit:hit,map:map,n:d[0][0]};
+}
+function spScore(target,heard){
+  var t=spWords(target),h=spWords(heard),a=spAlign(t,h),extra=Math.max(0,h.length-t.length);
+  return {score:t.length?Math.max(0,Math.round(100*a.n/t.length)-Math.min(10,extra*2)):0,hit:a.hit,words:t};
+}
+function spPaint(hit){
+  var s=S.sents[P.i]||'',k=-1;
+  $('#s-line').innerHTML=s.split(SP_RE).map(function(t,x){
+    if(!(x%2)) return esc(t); k++;
+    return hit?'<span class="'+(hit[k]===true?'ok':(hit[k]||'bad'))+'" data-w="'+esc(t)+'">'+esc(t)+'</span>':esc(t);
+  }).join('');
+}
+function spBlock(msg){P.blocked=true; $('#s-block').hidden=false; $('#s-block').textContent=msg; $('#s-rec').disabled=true}
+function spReset(){P.i=0;P.scores={};spShow()}
+function spAvg(){var k=Object.keys(P.scores); $('#s-avg').textContent=k.length?Math.round(k.reduce(function(a,x){return a+P.scores[x]},0)/k.length):'–'}
+function spShow(){
+  if(P.rec&&P.on){try{P.rec.abort()}catch(e){}}
+  $('#s-pos').textContent='第 '+Math.min(P.i+1,S.sents.length)+' / '+S.sents.length+' 句';
+  spPaint(null); $('#s-result').hidden=true; $('#s-live').textContent='';
+  var zh=zhOf(P.i); $('#s-zh').hidden=!zh; $('#s-zh').textContent=zh; spAvg();
+}
+function spGrade(cands){
+  var s=S.sents[P.i],best=null,heard='';
+  cands.forEach(function(c){var r=spScore(s,c); if(!best||r.score>best.score){best=r;heard=c}});
+  spResult(best.score,best.hit,best.words,'听到的是：'+heard);
+}
+function spResult(score,marks,words,note){
+  P.scores[P.i]=Math.max(P.scores[P.i]||0,score); spPaint(marks); spAvg();
+  P.miss=words.filter(function(w,k){return marks[k]!==true&&marks[k]!=='ok'&&w.length>1});
+  $('#s-result').hidden=false; $('#s-score').textContent=score;
+  $('#s-score').style.color=score>=90?'var(--ok)':(score>=70?'var(--ink)':'var(--bad)');
+  $('#s-verdict').textContent=score>=90?'很清楚，可以读下一句了。':(score>=70?'基本清楚，把标色的词再读一遍。':'有不少词没读清，先听一遍示范再读。');
+  $('#s-heard').textContent=note;
+  $('#s-miss').innerHTML=P.miss.length?'<button class="btn" id="s-miss-add">把没读清的词加入单词练习</button>':'';
+  var b=$('#s-miss-add'); if(b) b.onclick=function(){P.miss.forEach(function(w){addWord(w,true)}); wRender(); save(); b.disabled=true; b.textContent='已加入单词练习'};
+}
+var SP_ERR={'no-speech':'没有听到声音，靠近麦克风再试一次。','audio-capture':'没有找到麦克风，请检查电脑的麦克风。','network':'语音识别服务连不上。Chrome 的识别要连 Google，建议改用 Microsoft Edge。','aborted':''};
+function spStart(){
+  if(P.blocked) return;
+  if(azOn()) return azStart();
+  if(!SR) return; stopAll();
+  var rec=new SR(),finals=[],alts=[],err='',btn=$('#s-rec'),live=$('#s-live');
+  P.rec=rec; rec.lang='en-US'; rec.interimResults=true; rec.maxAlternatives=3; rec.continuous=true;
+  var need=spWords(S.sents[P.i]||'').length; P.stop=function(){try{rec.stop()}catch(e){}};
+  rec.onstart=function(){P.on=true; btn.textContent='读完了，停止'; btn.classList.add('live'); live.textContent='正在听…'};
+  rec.onresult=function(e){
+    var interim='';
+    for(var k=e.resultIndex;k<e.results.length;k++){
+      var r=e.results[k];
+      if(r.isFinal){finals.push(r[0].transcript); alts=[]; for(var a=1;a<r.length;a++) alts.push(r[a].transcript)}
+      else interim+=r[0].transcript;
+    }
+    live.textContent=(finals.join(' ')+' '+interim).trim();
+    if(!interim&&spWords(finals.join(' ')).length>=need) P.stop();
+  };
+  rec.onerror=function(e){err=e.error};
+  rec.onend=function(){
+    P.on=false; btn.textContent='开始跟读'; btn.classList.remove('live');
+    var heard=finals.join(' ').trim();
+    if(heard){live.textContent=''; spGrade(finals.length===1?[heard].concat(alts):[heard]); return}
+    if(err==='not-allowed'||err==='service-not-allowed'){ if(!HOSTED){live.textContent=''; $('#s-block').hidden=false; $('#s-block').textContent=MIC_LOCAL} else {spBlock(MIC_MSG); live.textContent=''} return}
+    live.textContent=err in SP_ERR?SP_ERR[err]:'没有听到声音，再试一次。';
+  };
+  try{rec.start()}catch(e){live.textContent='麦克风正忙，稍等一下再点。'}
+}
+var LOCAL=location.protocol==='file:';
+var MIC_MSG='这个页面放在 Claude 里，拿不到麦克风，跟读打分用不了。请改用本地文件或发布到 GitHub 的那个网址来跟读。';
+var MIC_LOCAL='浏览器没有拿到麦克风。请点地址栏左边的图标，把这个网站的麦克风设为「允许」；Mac 还要在「系统设置 → 隐私与安全性 → 麦克风」里打开这个浏览器的开关，然后重新打开页面再试。';
+$('#s-rec').onclick=function(){ if(P.on){ if(P.stop) P.stop() } else spStart() };
+$('#s-say').onclick=function(){say(S.sents[P.i]||'')};
+$('#s-prev').onclick=function(){ if(P.i>0){P.i--; spShow()} };
+$('#s-next').onclick=function(){ if(P.i<S.sents.length-1){P.i++; spShow()} };
+$('#s-line').addEventListener('click',function(e){var w=e.target.dataset&&e.target.dataset.w; if(w) say(w,Math.min(S.rate,0.85))});
+function spInit(){
+  P.blocked=false; $('#s-block').hidden=true; $('#s-rec').disabled=false;
+  if(HOSTED){ try{ var fp=document.featurePolicy||document.permissionsPolicy; if(!SR||(fp&&fp.allowsFeature&&!fp.allowsFeature('microphone'))) spBlock(MIC_MSG) }catch(e){} }
+  else if(azOn()){ if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)) spBlock('这个浏览器拿不到麦克风，请换用 Edge、Chrome 或 Safari。') }
+  else if(!SR) spBlock('这个浏览器不支持语音识别。请用 Microsoft Edge 或 Chrome 打开，或者在「设置」里填上微软语音密钥。');
+  $('#s-how').textContent=azOn()?'打分方式：微软发音评测。准确度看每个词的发音，流利度看停顿和节奏，完整度看有没有读全。绿色是 80 分以上的词，橙色是 60–79 分，红色是没读到或低于 60 分；点标色的词可以听它的发音。读完会自动停，中途停顿不会被打断。'
+    :'打分方式：浏览器把你读的话转成文字，再和原句逐词比对。绿色是听清了的词，红色是没听出来的词，点红色的词可以听它的发音。分数反映的是「读得能不能被听懂」，不是逐个音素的发音评测。读完会自动停，中途停顿不会被打断。';
+}
+spInit();
+
+/* ---------- resources ---------- */
+var RES_CATS=[];
+RES_RAW.trim().split('\n').forEach(function(l){
+  if(l[0]==='#') RES_CATS.push({name:l.slice(1),items:[]});
+  else{var p=l.split('|'); RES_CATS[RES_CATS.length-1].items.push({n:p[0],u:p[1],d:p[2]||''})}
+});
+$('#r-cat').innerHTML='<option value="">全部分类</option>'+RES_CATS.map(function(c,i){return '<option value="'+i+'">'+esc(c.name)+'（'+c.items.length+'）</option>'}).join('');
+function renderRes(){
+  var q=$('#r-q').value.trim().toLowerCase(),c=$('#r-cat').value,h='';
+  RES_CATS.forEach(function(cat,ci){
+    if(c!==''&&+c!==ci) return;
+    var items=cat.items.filter(function(x){return !q||(x.n+' '+x.d).toLowerCase().indexOf(q)>=0}); if(!items.length) return;
+    h+='<div class="sheet bench"><h2>'+esc(cat.name)+' <span class="muted small">'+items.length+'</span></h2><ul class="res-list">'+items.map(function(x){
+      return '<li><a href="'+esc(x.u)+'" target="_blank" rel="noopener">'+esc(x.n)+'</a><div class="muted small">'+esc(x.d)+'</div></li>'}).join('')+'</ul></div>';
+  });
+  $('#r-out').innerHTML=h||'<p class="note">没有找到匹配的网站。</p>';
+}
+$('#r-q').oninput=renderRes; $('#r-cat').onchange=renderRes; renderRes();
+
+/* ---------- tabs & editor ---------- */
+var TABS=['today','read','parse','type','speak','words','res'];
+function showTab(t,user){
+  stopAll(); if(P.on&&P.rec){try{P.rec.abort()}catch(e){}}
+  if(t==='speak') spShow();
+  TABS.forEach(function(x){$('#tab-'+x).hidden=x!==t});
+  document.querySelectorAll('.tabs button').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.tab===t))});
+  if(user&&t==='type'&&$('#t-result').hidden) tShow(true);
+  if(user&&t==='words'&&S.words.length&&$('#w-result').hidden) wShow(true);
+}
+document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('button'); if(b) showTab(b.dataset.tab,true)});
+$('#btn-edit').onclick=function(){$('#editor').hidden=false; $('#article-input').value=S.text.replace(/\n/g,'\n\n'); $('#editor-msg').textContent=''; $('#article-input').focus()};
+$('#btn-cancel').onclick=function(){$('#editor').hidden=true};
+$('#btn-sample').onclick=function(){$('#article-input').value=SAMPLE};
+$('#btn-load').onclick=function(){
+  var t=$('#article-input').value;
+  if(!(t.match(WORD_RE)||[]).length){$('#editor-msg').textContent='没有找到英文内容，请粘贴一篇英文文章。';return}
+  stopAll(); loadText(t); $('#editor').hidden=true; if(sample) aiReady(); $('#ai-msg').className='muted small';
+  showTab('read');
+};
+
+/* ---------- boot ---------- */
+var saved=store.get()||{};
+if(Array.isArray(saved.words)) S.words=saved.words.filter(function(w){return typeof w==='string'});
+if(saved.dict&&typeof saved.dict==='object') S.dict=saved.dict;
+if(saved.rate>=0.5&&saved.rate<=1.3) S.rate=+saved.rate;
+if(typeof saved.voice==='string') S.voice=saved.voice;
+if(saved.analysis&&saved.text) S.analysis=saved.analysis;
+if(saved.daily&&saved.daily.text) S.daily=saved.daily;
+S.dailyDone=saved.dailyDone||'';
+$('#rate').value=S.rate; $('#rate-val').textContent=S.rate.toFixed(2)+'×';
+loadText(typeof saved.text==='string'&&saved.text?saved.text:SAMPLE,true);
+renderDaily(); showTab(S.dailyDone===todayKey()?'read':'today');
+if(synth){loadVoices(); if('onvoiceschanged' in synth) synth.onvoiceschanged=loadVoices}
+else if(!azOn()){$('#tts-missing').hidden=false}
+(async function(){
+  try{claudeSample=(window.claude&&window.claude.use)?await window.claude.use('sample'):null}catch(e){claudeSample=null}
+  pickAI();
+})();
+})();
+</script>
+</body></html>
