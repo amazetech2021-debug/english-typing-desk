@@ -273,6 +273,7 @@ body.pbfull-on{overflow:hidden}
 #l-work.vfix #v-list{display:none}
 #v-emsg.ok{color:var(--deep2,#2a7)}
 #l-work.subs #l-video{max-height:min(420px,38vh)}
+#l-work.subs #l-embed-wrap{max-height:min(420px,38vh)}
 #v-now{display:none;position:relative;padding:18px 22px 20px}
 .vnow-tx{font-family:var(--read);font-size:1.16rem;line-height:1.95;margin-top:4px}
 .vnow-tx .w{cursor:pointer;border-radius:4px}
@@ -283,6 +284,7 @@ body.pbfull-on{overflow:hidden}
 #l-work.hasv>.row{grid-column:1/-1;grid-row:1}
 #l-work.hasv>.bar{grid-column:1/-1;grid-row:2}
 #l-work.hasv>#l-video,#l-work.hasv>#l-embed-wrap{grid-column:1;grid-row:3;box-shadow:none;max-height:min(560px,52vh)}
+#l-work.hasv>#l-embed-wrap:fullscreen,#l-work.hasv>#l-embed-wrap:-webkit-full-screen{max-height:none;width:100vw;height:100vh;aspect-ratio:auto;border-radius:0;top:0}
 #l-work.hasv>#l-seekbar{grid-column:1;grid-row:4}
 #l-work.hasv>#pb-view{grid-column:1;grid-row:3}
 #l-work.hasv>#n-work,#l-work.hasv>#l-sent,#l-work.hasv>#r-work{grid-column:2;grid-row:3/9;min-width:0}
@@ -687,7 +689,7 @@ body.haspen .penbtn{display:block}
 .lgo{margin-top:2px}
 #l-work:has(.typebox.pen) #l-video{max-height:min(300px,30vh)}
 #l-video{width:100%;max-height:min(520px,48vh);transition:max-height .18s ease;border-radius:12px;border:1px solid var(--line);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,76px));z-index:18;background:#000;box-shadow:0 0 0 10px var(--bg),0 14px 12px -8px var(--shadow)}
-#l-embed-wrap{width:100%;aspect-ratio:16/9;max-height:min(520px,56vh);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,76px));z-index:18;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 0 0 10px var(--bg),0 14px 12px -8px var(--shadow)}
+#l-embed-wrap{width:100%;aspect-ratio:16/9;max-height:min(520px,48vh);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,76px));z-index:18;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 0 0 10px var(--bg),0 14px 12px -8px var(--shadow)}
 #l-embed-wrap{position:sticky}
 #l-embed-wrap>#l-embed{position:absolute;inset:0;width:100%;height:100%}
 #l-embed-wrap iframe{display:block;width:100%;height:100%;border:0}
@@ -3053,7 +3055,8 @@ $('#l-play').onclick=function(){ var u=L.units[L.i]; if(L.id) embedSeek(u&&u.t!=
 /* the YouTube link in the video card: shows how to get its subtitles, and fills the terminal's link box */
 function lYt(){ var v=$('#l-yt').value.trim(), id=ytId(v), direct=directVideoUrl(v), h=$('#l-yt-help'); h.hidden=!v; $('#l-yt-wave').hidden=$('#l-yt-more').hidden=!id; $('#l-yt-st').textContent=id?'✓ 找到视频。':(direct?'✓ 找到可直接播放的视频链接。':'这个链接暂不支持站内播放。'); $('#l-vclear').hidden=$('#l-keep').hidden&&!v;
   if(id&&(!$('#l-url').value.trim()||ytId($('#l-url').value)!==id)){ $('#l-url').value=v; lCmds() } }
-function lBegin(units,id,media){ if(id&&id!==ytVideoId) mountEmbed(id,units[0]&&units[0].t); else if(!id&&L.id) closeEmbeddedVideo(); setTimeout(function(){ try{ plUi() }catch(e){} },50);
+function lExitEmbedFullscreen(){ var w=$('#l-embed-wrap'),active=document.fullscreenElement||document.webkitFullscreenElement; if(!w||!active||!(active===w||w.contains(active))) return; try{ var exit=document.exitFullscreen||document.webkitExitFullscreen; if(exit){var p=exit.call(document);if(p&&p.catch)p.catch(function(){})} }catch(e){} }
+function lBegin(units,id,media){ lExitEmbedFullscreen(); stopEmbeddedVideo(); if(id&&id!==ytVideoId) mountEmbed(id,units[0]&&units[0].t); else if(!id&&L.id) closeEmbeddedVideo(); setTimeout(function(){ try{ plUi() }catch(e){} },50);
   $('#pb-view').hidden=true; $('#l-work').classList.remove('pbm'); try{ if($('#pb-view').classList.contains('pbfull')) pbFull(false) }catch(e){}
   L={id:id,media:media||'',units:units,i:0,scores:{},checked:false,stopAt:null,shift:0,tts:!media&&!id}; $('#l-shift-val').textContent='0.0s';
   var lv=$('#l-video'); if(L.media){ if(lv.getAttribute('src')!==L.media) lv.src=L.media } else { lv.pause(); lv.removeAttribute('src') } $('#l-setup').hidden=true; $('#l-work').hidden=false; lv.hidden=!L.media;
@@ -3068,7 +3071,7 @@ function lCtlDock(m){
 function lMode(m){
   if(m!==2){ try{ var fe=$('#v-edit'); if(fe){ fe.hidden=true; $('#l-work').classList.remove('vfix') } }catch(e){} }
   setTimeout(function(){ try{ pbTxtPaint() }catch(e){} },0);
-  m=m===true?1:(+m||0); L.notes=m===1; L.subs=m===2; L.follow=m===3; $('#l-work').classList.toggle('subs',m===2);
+  m=m===true?1:(+m||0); if(m===0) lExitEmbedFullscreen(); L.notes=m===1; L.subs=m===2; L.follow=m===3; $('#l-work').classList.toggle('subs',m===2);
   $('#l-m1').setAttribute('aria-pressed',String(m===0)); $('#l-m2').setAttribute('aria-pressed',String(m===1)); $('#l-m3').setAttribute('aria-pressed',String(m===2)); $('#l-m4').setAttribute('aria-pressed',String(m===3)); $('#r-work').hidden=m!==3;
   if(m!==4){ try{ lqHalt() }catch(e){} } $('#l-m5').setAttribute('aria-pressed',String(m===4)); $('#q-work').hidden=m!==4; $('#l-sent').hidden=m!==0; $('#l-ctl').hidden=m!==0&&m!==3; lCtlDock(m); $('#n-ctl').hidden=m!==1||(!L.media&&!L.id&&!(L.tts&&L.units.length)); $('#n-work').hidden=m!==1; $('#v-work').hidden=m!==2; $('#l-avg-box').hidden=m!==0; document.querySelector('#l-work .bar').hidden=m!==0&&m!==3; if(kP&&kHost===$('#r-platen')) kClose();
   if(kP&&(kHost===$('#v-wrap')||kHost===$('#v-now')||kHost===$('#l-platen'))) kClose();
