@@ -687,6 +687,8 @@ body.haspen .penbtn{display:block}
 .lgo{margin-top:2px}
 #l-work:has(.typebox.pen) #l-video{max-height:min(300px,30vh)}
 #l-video{width:100%;max-height:min(520px,48vh);transition:max-height .18s ease;border-radius:12px;border:1px solid var(--line);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,76px));z-index:18;background:#000;box-shadow:0 0 0 10px var(--bg),0 14px 12px -8px var(--shadow)}
+#l-embed-wrap{width:100%;aspect-ratio:16/9;max-height:min(520px,56vh);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,76px));z-index:18;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 0 0 10px var(--bg),0 14px 12px -8px var(--shadow)}
+#l-embed-wrap iframe{display:block;width:100%;height:100%;border:0}
 input[type=file]{max-width:100%}
 a.btn{text-decoration:none;display:inline-block}
 #l-line .ok{color:var(--ok)}
@@ -991,7 +993,7 @@ html.lfocus{--tabs-h:0px}
           <p class="muted small">mp4、mov、mp3、m4a 等，可以一次选好几个，都放进下面的列表（RMVB、AVI 先用「终端命令 → 格式转换」转成 mp4）。点列表里的哪个就换到哪个。都不选的话，就用语音一句一句读字幕。</p>
           <div class="bench" id="pl-box" hidden><div class="shlist" id="pl-list"></div></div>
           <div class="lfile" id="l-keep" hidden><div class="lfname" id="l-keep-name"></div><div class="small muted" id="l-keep-st"></div><div class="lbar" id="l-keep-bar" hidden><i></i></div></div>
-          <div class="cfield lyt"><label class="small" for="l-yt"><strong>或者粘贴视频链接</strong><span class="muted"> · YouTube、哔哩哔哩，可以一次贴好几个（一行一个）</span></label><div class="row lytrow"><textarea id="l-yt" rows="2" placeholder="https://www.youtube.com/watch?v=…&#10;https://www.bilibili.com/video/BV…" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea><button class="btn" id="pl-addlink" type="button">加入列表</button></div></div><div class="lythelp small" id="l-yt-help" hidden><span id="l-yt-st"></span> 字幕怎么来（iPad 也能用）：</div><div class="lywave" id="l-yt-wave" hidden><a class="btn" id="l-wave" href="https://wave.co/zh/tools/youtube-transcript" target="_blank" rel="noopener">打开 Wave 取字幕</a><span class="small muted">点了会先复制好视频链接。在 Wave 里粘贴链接、点「提取字幕」，下载 <b>SRT</b>，回来在右边「选择字幕文件」选它；或者打开时间戳后一键复制，粘贴到右边字幕框（先在左边列表里选中这个视频）。Wave 每天可以免费取 30 次。</span></div><div class="lythelp small" id="l-yt-more" hidden>其他办法：在 YouTube 视频下面点「…更多 → 显示文字记录」，全选复制，粘贴到右边；或者在 Mac 上 <button type="button" class="linkish" id="l-yt-cmd">复制下载字幕的终端命令</button>。</div><div class="row lact"><label class="btn" for="l-file" id="l-file-btn">选择文件</label><input type="file" id="l-file" class="vh" accept="video/*,audio/*,.rmvb,.rm,.avi,.flv,.wmv,.mkv,.ts,.mpg,.mpeg,.vob,.srt,.vtt,.txt,.ass,.ssa,.lrc,text/plain,text/vtt,application/x-subrip" multiple><button class="btn" id="l-up" hidden title="传到云端后，iPad、iPhone 等其他设备也能打开">上传云端</button><span class="grow"></span><button class="btn quiet" id="l-vclear" hidden title="清掉这台设备和云端保存的视频或音频">清除</button></div>
+          <div class="cfield lyt"><label class="small" for="l-yt"><strong>或者粘贴视频链接</strong><span class="muted"> · YouTube、哔哩哔哩（支持批量），也可粘贴 MP4 / WebM 直链（单个）</span></label><div class="row lytrow"><textarea id="l-yt" rows="2" placeholder="https://www.youtube.com/watch?v=…&#10;https://www.bilibili.com/video/BV…" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea><button class="btn" id="pl-addlink" type="button">加入列表</button></div></div><div class="lythelp small" id="l-yt-help" hidden><span id="l-yt-st"></span> 字幕怎么来（iPad 也能用）：</div><div class="lywave" id="l-yt-wave" hidden><a class="btn" id="l-wave" href="https://wave.co/zh/tools/youtube-transcript" target="_blank" rel="noopener">打开 Wave 取字幕</a><span class="small muted">点了会先复制好视频链接。在 Wave 里粘贴链接、点「提取字幕」，下载 <b>SRT</b>，回来在右边「选择字幕文件」选它；或者打开时间戳后一键复制，粘贴到右边字幕框（先在左边列表里选中这个视频）。Wave 每天可以免费取 30 次。</span></div><div class="lythelp small" id="l-yt-more" hidden>其他办法：在 YouTube 视频下面点「…更多 → 显示文字记录」，全选复制，粘贴到右边；或者在 Mac 上 <button type="button" class="linkish" id="l-yt-cmd">复制下载字幕的终端命令</button>。</div><div class="row lact"><label class="btn" for="l-file" id="l-file-btn">选择文件</label><input type="file" id="l-file" class="vh" accept="video/*,audio/*,.rmvb,.rm,.avi,.flv,.wmv,.mkv,.ts,.mpg,.mpeg,.vob,.srt,.vtt,.txt,.ass,.ssa,.lrc,text/plain,text/vtt,application/x-subrip" multiple><button class="btn" id="l-up" hidden title="传到云端后，iPad、iPhone 等其他设备也能打开">上传云端</button><span class="grow"></span><button class="btn quiet" id="l-vclear" hidden title="清掉这台设备和云端保存的视频或音频">清除</button></div>
         </div>
         <div class="lcard">
           <div class="lhead"><span class="lnum">2</span><strong>字幕或文字</strong><span class="small" id="pl-subfor" style="color:var(--accent)"></span><span class="small muted grow" id="l-sub-st" style="text-align:right"></span></div>
@@ -1088,6 +1090,7 @@ html.lfocus{--tabs-h:0px}
       </div>
       <div class="bar"><i id="l-bar"></i></div>
       <video id="l-video" playsinline preload="auto" hidden></video>
+      <div id="l-embed-wrap" hidden><iframe id="l-embed" title="视频播放器" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
       <div class="row" id="l-seekbar"><span class="ipa small" id="l-cur">0:00</span><input type="range" id="l-seek" class="grow" min="0" max="1000" step="1" value="0" aria-label="播放进度"><span class="ipa small" id="l-dur">0:00</span><button class="btn quiet" id="l-full" title="全屏播放">全屏</button></div>
       <div id="pb-view" hidden>
         <div class="pbframe"><div class="pbpage" id="pb-page"><img id="pb-img" alt="" hidden draggable="false"><p class="muted small" id="pb-none" hidden>这一页没有图片。</p></div></div>
@@ -1099,7 +1102,7 @@ html.lfocus{--tabs-h:0px}
       <div class="row lrow" id="l-ctl">
         <button class="btn primary" id="l-prev">上一句</button>
         <button class="btn primary" id="l-seg" hidden>播放</button>
-        <a class="btn primary" id="l-play" target="yt-dictation">播放</a>
+        <button class="btn primary" id="l-play" type="button" hidden>播放本句</button>
         <button class="btn primary pp-btn" id="l-pause" data-on="暂停" data-off="继续">暂停</button>
         <button class="btn primary" id="l-next">下一句</button>
         <label class="row small" for="l-speed" id="l-speed-box" hidden>速度 <select id="l-speed"><option value="0.6">0.6×</option><option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1×</option></select></label>
@@ -2836,6 +2839,14 @@ $('#btn-md').onclick=async function(){
 var L={id:'',media:'',units:[],i:0,scores:{},checked:false,stopAt:null,shift:0}, lFileUrl='';
 function ytId(u){var b=String(u).match(/bilibili\.com\/(?:video\/|.*[?&]bvid=)(BV[0-9A-Za-z]{10})/); if(b) return b[1]; var m=String(u).match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/); return m?m[1]:''}
 function vidUrl(id,t){ var s=t!=null?Math.max(0,Math.floor(t)):null; if(/^BV/.test(id)) return 'https://www.bilibili.com/video/'+id+(s!=null?'?t='+s:''); return 'https://www.youtube.com/watch?v='+id+(s!=null?'&t='+s+'s':'') }
+function directVideoUrl(raw){ try{var u=new URL(raw); return /^https?:$/.test(u.protocol)&&/\.(mp4|m4v|webm|ogv|ogg|mov)$/i.test(u.pathname)}catch(e){return false} }
+function embedSrc(id,t){ var s=t!=null?Math.max(0,Math.floor(t)):0; return /^BV/.test(id)?'https://player.bilibili.com/player.html?bvid='+encodeURIComponent(id)+'&page=1&high_quality=1&danmaku=0&t='+s:'https://www.youtube.com/embed/'+encodeURIComponent(id)+'?enablejsapi=1&origin='+encodeURIComponent(location.origin)+'&playsinline=1&controls=1&start='+s }
+function embedSeek(t,play){ if(!L.id) return; var sec=Math.max(0,Math.floor(t||0)), f=$('#l-embed'); L.embedIndex=L.units&&L.units.length?Math.max(0,L.units.reduce(function(k,u,i){return u.t!=null&&u.t<=sec?i:k},0)):0;
+  if(/^BV/.test(L.id)){ f.src=embedSrc(L.id,sec); return }
+  function send(){ if(!f.contentWindow) return; f.contentWindow.postMessage(JSON.stringify({event:'command',func:'seekTo',args:[sec,true]}),'https://www.youtube.com'); if(play) f.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'https://www.youtube.com') }
+  if(!f.src){ f.src=embedSrc(L.id,sec); f.onload=function(){setTimeout(send,250)} } else {send();setTimeout(send,300)}
+}
+function embedToggle(){ var f=$('#l-embed'); if(/^BV/.test(L.id)){ return } var fn=L.embedPlaying?'pauseVideo':'playVideo'; L.embedPlaying=!L.embedPlaying; if(f.contentWindow) f.contentWindow.postMessage(JSON.stringify({event:'command',func:fn,args:[]}),'https://www.youtube.com') }
 function tsSec(s){var p=s.split(':').map(Number); return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1]}
 function tsFmt(t){var m=Math.floor(t/60),s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s}
 function parseTranscript(raw){
@@ -2898,10 +2909,11 @@ function lShow(){
   var k=Object.keys(L.scores); $('#l-avg').textContent=k.length?Math.round(k.reduce(function(a,x){return a+L.scores[x]},0)/k.length):'–';
   L.hint=$('#l-always').checked?2:0; lHint();
   $('#l-input').value=''; $('#l-res').textContent=''; $('#l-check').textContent='对答案';
-  var lv=$('#l-video'); lv.hidden=!L.media; $('#l-seg').hidden=!L.media&&!L.tts; $('#l-speed-box').hidden=!L.media&&!L.tts; $('#l-tts').hidden=!!L.tts; $('#l-load').textContent=L.pb?'整本文字载入为文章':'字幕载入为文章'; $('#l-shift-box').hidden=!L.media;
-  var a=$('#l-play'); a.hidden=!L.id||!!L.media; lYtOpen();
+  var lv=$('#l-video'), embedded=!!L.id, frame=$('#l-embed-wrap'); lv.hidden=!L.media||embedded; frame.hidden=!embedded; $('#l-seekbar').hidden=embedded; $('#l-pause').hidden=embedded; if(embedded){$('#l-embed').src=embedSrc(L.id,L.units[0]&&L.units[0].t)}else{$('#l-embed').removeAttribute('src')}
+  $('#l-seg').hidden=!L.media&&!L.tts; $('#l-speed-box').hidden=!L.media&&!L.tts; $('#l-tts').hidden=!!L.tts; $('#l-load').textContent=L.pb?'整本文字载入为文章':'字幕载入为文章'; $('#l-shift-box').hidden=!L.media&&!embedded;
+  var a=$('#l-play'); a.hidden=!embedded; lYtOpen();
   if(L.id) a.href=vidUrl(L.id,u.t);
-  $('#l-tip').textContent=L.media?(u.t!=null?'':'字幕没有时间点，请用播放器自己控制。'):L.id?(u.t!=null?'点「播放」，视频会在另一个窗口跳到这一句；把两个窗口并排放最方便。':'字幕没有时间点，视频从头播放，请自己拖到这一句。'):'';
+  $('#l-tip').textContent=L.media?(u.t!=null?'':'字幕没有时间点，请用播放器自己控制。'):L.id?(u.t!=null?'视频已嵌入本页；点「播放本句」跳到这句。':'视频已嵌入本页，可直接用播放器控制。'):'';
   if(L.follow) rShow();
 }
 /* 跟读 inside 听写: hear one sentence of the video or picture book, say it back through the keyboard's dictation, get the words marked */
@@ -2934,8 +2946,9 @@ $('#r-input').addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isC
 $('#r-go').onclick=rGrade;
 $('#r-clear').onclick=function(){ clearTimeout(rT); $('#r-input').value=''; $('#r-result').hidden=true; $('#r-live').textContent=''; rPaint(null); $('#r-input').focus() };
 function lYtOpen(){ var b=$('#l-ytopen'); if(!b) return; b.hidden=!L.id; if(L.id){ var u=L.units&&L.units[L.i]; b.href=vidUrl(L.id,u&&u.t) } }
+$('#l-play').onclick=function(){ var u=L.units[L.i]; if(L.id) embedSeek(u&&u.t!=null?u.t+L.shift:0,true) }
 /* the YouTube link in the video card: shows how to get its subtitles, and fills the terminal's link box */
-function lYt(){ var v=$('#l-yt').value.trim(), id=ytId(v), h=$('#l-yt-help'); h.hidden=!v; $('#l-yt-wave').hidden=$('#l-yt-more').hidden=!id; $('#l-yt-st').textContent=id?'✓ 找到视频。':'这个链接里没找到 YouTube 视频编号。'; $('#l-vclear').hidden=$('#l-keep').hidden&&!v;
+function lYt(){ var v=$('#l-yt').value.trim(), id=ytId(v), direct=directVideoUrl(v), h=$('#l-yt-help'); h.hidden=!v; $('#l-yt-wave').hidden=$('#l-yt-more').hidden=!id; $('#l-yt-st').textContent=id?'✓ 找到视频。':(direct?'✓ 找到可直接播放的视频链接。':'这个链接暂不支持站内播放。'); $('#l-vclear').hidden=$('#l-keep').hidden&&!v;
   if(id&&(!$('#l-url').value.trim()||ytId($('#l-url').value)!==id)){ $('#l-url').value=v; lCmds() } }
 function lBegin(units,id,media){ setTimeout(function(){ try{ plUi() }catch(e){} },50);
   $('#pb-view').hidden=true; $('#l-work').classList.remove('pbm'); try{ if($('#pb-view').classList.contains('pbfull')) pbFull(false) }catch(e){}
@@ -2957,7 +2970,7 @@ function lMode(m){
   if(m!==4){ try{ lqHalt() }catch(e){} } $('#l-m5').setAttribute('aria-pressed',String(m===4)); $('#q-work').hidden=m!==4; $('#l-sent').hidden=m!==0; $('#l-ctl').hidden=m!==0&&m!==3; lCtlDock(m); $('#n-ctl').hidden=m!==1||(!L.media&&!(L.tts&&L.units.length)); $('#n-work').hidden=m!==1; $('#v-work').hidden=m!==2; $('#l-avg-box').hidden=m!==0; document.querySelector('#l-work .bar').hidden=m!==0&&m!==3; if(kP&&kHost===$('#r-platen')) kClose();
   if(kP&&(kHost===$('#v-wrap')||kHost===$('#v-now')||kHost===$('#l-platen'))) kClose();
   lYtOpen();
-  if(m===1){ L.stopAt=null; $('#l-pos').textContent=L.id?'随手记 · 视频在 YouTube 窗口里放':'随手记 · 视频用播放器自己控制'; nRender() }
+  if(m===1){ L.stopAt=null; $('#l-pos').textContent=L.id?'随手记 · 视频在本页播放':'随手记 · 视频用播放器自己控制'; nRender() }
   else if(m===2){ L.stopAt=null; $('#l-pos').textContent='精听 · 共 '+L.units.length+' 句'; vRender() }
   else if(m===4){ L.stopAt=null; $('#l-pos').textContent='听力题 · 共 '+L.units.length+' 句'; lqShow() }
   else lShow();
@@ -2966,14 +2979,14 @@ function lMode(m){
 function pbDock(){ var b=$('#pb-ocr'), m=L.subs?2:(L.notes?1:0); if(!b) return; if(m===2) $('#v-msg').parentNode.insertBefore(b,$('#v-msg')); else if(m===1) $('#n-ctl').appendChild(b); else $('#l-ctl').insertBefore(b,$('#l-shift-box')); if(!L.pb) b.hidden=true }
 /* ---------- watch with the whole transcript: follows the video, tap a word to pause and look it up ---------- */
 var vFail={}, vBusy=false, vCur=-1, vHold=0;
-function vTimed(){ return !!L.media&&L.units.some(function(u){return u.t!=null}) }
-function vIndex(){ if(!vTimed()) return L.i; var ct=$('#l-video').currentTime-L.shift+0.15, k=-1; L.units.forEach(function(u,j){ if(u.t!=null&&u.t<=ct) k=j }); return k<0?0:k }
+function vTimed(){ return !!(L.media||L.id)&&L.units.some(function(u){return u.t!=null}) }
+function vIndex(){ if(L.id) return L.embedIndex||L.i; if(!vTimed()) return L.i; var ct=$('#l-video').currentTime-L.shift+0.15, k=-1; L.units.forEach(function(u,j){ if(u.t!=null&&u.t<=ct) k=j }); return k<0?0:k }
 function vZhOf(t){ return ((kTr[t]||{}).zh)||'' }
 function vRender(){
   if(!L.subs) return; var box=$('#v-list'); $('#l-work').classList.toggle('rbon',CJK()&&RUBY.on);
   box.innerHTML=L.units.map(function(u,j){ var zh=vZhOf(u.text); return '<div class="vcue" data-j="'+j+'"><div class="vmeta">'+(j+1)+(u.t!=null?' · '+tsFmt(u.t)+(u.e!=null?' – '+tsFmt(u.e):''):'')+'</div><div class="vtx">'+wrapWords(u.text)+'</div><div class="vzh"'+(zh&&ZH.on?'':' hidden')+'>'+esc(zh)+'</div></div>' }).join('');
   $('#v-fix').hidden=$('#v-dl').hidden=!L.pb; if(!L.pb&&FIX.on) vFixOff();
-  $('#v-msg').textContent=L.media?(vTimed()?'':'字幕没有时间点，不能跟着视频走。'):(L.pb?'':(L.id?'视频在 YouTube 窗口里放：点一句会朗读这一句；要在视频里跳到某一句，用「听写」里的「播放」，或点上面「在 YouTube 打开视频」。':'没有视频：点一句就朗读这一句，「播放」从这句接着往下读。'));
+  $('#v-msg').textContent=(L.media||L.id)?(vTimed()?'':'字幕没有时间点，不能跟着视频走。'):(L.pb?'':'没有视频：点一句就朗读这一句，「播放」从这句接着往下读。');
   [].forEach.call(document.querySelectorAll('.zh-btn'),function(b){ b.textContent='翻译：'+(ZH.on?'开':'关') });
   vCur=-1; vMark(true); var un=L.units;
   rubyNeed(L.units.map(function(u){return u.text}),function(){ if(L.subs&&L.units===un&&!kP) vRender() });
@@ -3059,7 +3072,8 @@ async function vTrans(){
 }
 function vGo(j,stopAtEnd){
   var u=L.units[j]; if(!u) return; kClose(); L.i=j; var v=$('#l-video');
-  if(L.media&&u.t!=null){ stopAll(); L.selfSeek=Date.now(); L.moved=false; v.playbackRate=+$('#v-speed').value||1; try{v.currentTime=Math.max(0,u.t-0.1+L.shift)}catch(e){} L.stopAt=stopAtEnd&&u.e!=null?u.e+0.15+L.shift:null; var p=v.play(); if(p&&p.catch) p.catch(function(){}) }
+  if(L.id&&u.t!=null){ embedSeek(Math.max(0,u.t+L.shift),true) }
+  else if(L.media&&u.t!=null){ stopAll(); L.selfSeek=Date.now(); L.moved=false; v.playbackRate=+$('#v-speed').value||1; try{v.currentTime=Math.max(0,u.t-0.1+L.shift)}catch(e){} L.stopAt=stopAtEnd&&u.e!=null?u.e+0.15+L.shift:null; var p=v.play(); if(p&&p.catch) p.catch(function(){}) }
   else if(L.tts){ pbSpeak(j,!stopAtEnd); return }
   else say(u.text);
   vHold=0; vMark(true);
@@ -3086,7 +3100,7 @@ function nGo(d){
 }
 $('#n-prev').onclick=function(){ nGo(-1) }; $('#n-rep').onclick=function(){ nGo(0) }; $('#n-next').onclick=function(){ nGo(1) };
 /* our own transport: the native player controls are off, because on iPad they cover the picture whenever the video is paused */
-function lToggle(){ var v=$('#l-video'); if(PBA.on&&!L.media){ pbAutoOff(); stopAll(); return } if(!L.media){ if(L.tts&&L.units.length){ if(PBT.on) stopAll(); else pbSpeak(L.i,!!(L.subs||L.notes)) } return } if(v.paused){ stopAll(); var sp=$(L.subs?'#v-speed':(L.notes?'#n-speed':'#l-speed')); v.playbackRate=+(sp&&sp.value)||1; var p=v.play(); if(p&&p.catch) p.catch(function(){}) } else v.pause() }
+function lToggle(){ var v=$('#l-video'); if(PBA.on&&!L.media){ pbAutoOff(); stopAll(); return } if(L.id){ embedToggle(); return } if(!L.media){ if(L.tts&&L.units.length){ if(PBT.on) stopAll(); else pbSpeak(L.i,!!(L.subs||L.notes)) } return } if(v.paused){ stopAll(); var sp=$(L.subs?'#v-speed':(L.notes?'#n-speed':'#l-speed')); v.playbackRate=+(sp&&sp.value)||1; var p=v.play(); if(p&&p.catch) p.catch(function(){}) } else v.pause() }
 function lPP(){ var v=$('#l-video'), on=L.tts?PBT.on:(!v.paused&&!v.ended); [].forEach.call(document.querySelectorAll('.pp-btn'),function(b){ b.textContent=on?b.dataset.on:b.dataset.off }); $('#l-pause').disabled=!L.media&&!(L.tts&&L.units&&L.units.length) }
 [].forEach.call(document.querySelectorAll('.pp-btn'),function(b){ b.onclick=lToggle });
 $('#l-video').addEventListener('click',lToggle);
@@ -3146,9 +3160,9 @@ $('#n-clear').onclick=function(){
 try{ $('#n-input').value=LS.getItem('typing-desk-notes')||'' }catch(e){}
 $('#l-start').onclick=async function(){
   var units=parseTranscript($('#l-text').value), msg=$('#l-msg'), sb=this; msg.textContent='';
-  var _pc=null; try{ _pc=plCur() }catch(e){} var yid=_pc?(_pc.kind==='yt'?ytId(_pc.yt):''):ytId($('#l-yt').value); if(yid){ lSave(); lBegin(units,yid,''); return }
+  var _pc=null; try{ _pc=plCur() }catch(e){} var raw=$('#l-yt').value.trim(), yid=_pc?(_pc.kind==='yt'?ytId(_pc.yt):''):ytId(raw); if(yid){ lSave(); lBegin(units,yid,''); return } if(!_pc&&directVideoUrl(raw)){lSave();lBegin(units,'',raw);return}
   if(!lFileUrl&&mMeta){ if(sb.disabled) return; sb.disabled=true; try{ await mFetch() }catch(e){ sb.disabled=false; if(mMeta) mShow(mMeta.name,mMeta.size,'保存在云端，开始听写时下载'); msg.textContent='云端的视频没下载下来，请检查网络后再点一次，或者重新选文件。'; return } sb.disabled=false }
-  if(!lFileUrl){ if(units.length){ lSave(); lBegin(units,'',''); return } msg.textContent=$('#l-yt').value.trim()?'这个链接里没找到 YouTube 视频编号，请复制浏览器地址栏里的完整链接。':'先选一个视频或音频、填 YouTube 链接，或者在右边放字幕（有一样就能开始）。'; return }
+  if(!lFileUrl){ if(units.length){ lSave(); lBegin(units,'',''); return } msg.textContent=$('#l-yt').value.trim()?'这个链接不支持站内播放。请使用 YouTube、哔哩哔哩或直接 MP4 / WebM 视频链接。':'先选一个视频或音频、填 YouTube 链接，或者在右边放字幕（有一样就能开始）。'; return }
   lSave(); lBegin(units,'',lFileUrl);
 };
 $('#l-txtonly').onclick=function(){ var units=parseTranscript($('#l-text').value), msg=$('#l-msg'); msg.textContent=''; if(!units.length){ msg.textContent='还没有字幕：先粘贴，或选一个字幕文件。'; return } lSave(); lBegin(units,'','') };
