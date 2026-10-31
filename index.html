@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name=referrer content="strict-origin-when-cross-origin"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>英文跟读打字台 (Copy)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:opsz,wght@7..72,400;7..72,600&family=Noto+Serif+SC:wght@400;600;700;900&display=swap">
 <style>
@@ -691,7 +691,8 @@ body.haspen .penbtn{display:block}
 #l-embed-wrap{position:sticky}
 #l-embed-wrap>#l-embed{position:absolute;inset:0;width:100%;height:100%}
 #l-embed-wrap iframe{display:block;width:100%;height:100%;border:0}
-#l-embed-wrap iframe.yt-player-frame{pointer-events:none}
+#l-embed-wrap iframe{pointer-events:none}
+#l-embed-wrap iframe.bili-player-frame{pointer-events:auto}
 #l-embed-poster{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#000}
 #l-embed-poster[hidden]{display:none!important}
 #l-embed-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -706,6 +707,7 @@ body.haspen .penbtn{display:block}
 .yt-progress input{flex:1;min-width:0;accent-color:#ff1744}
 #l-embed-time{white-space:nowrap;text-shadow:0 1px 3px #000}
 #l-embed-wrap:fullscreen{width:100vw;height:100vh;max-height:none;aspect-ratio:auto;border-radius:0;top:0}
+#l-embed-error{position:absolute;z-index:7;left:12px;right:12px;bottom:12px;padding:10px 14px;border-radius:10px;background:rgba(20,16,28,.88);color:#fff;text-align:center;font-size:.9rem;line-height:1.5}
 input[type=file]{max-width:100%}
 a.btn{text-decoration:none;display:inline-block}
 #l-line .ok{color:var(--ok)}
@@ -1116,6 +1118,7 @@ html.lfocus{--tabs-h:0px}
           <div class="yt-progress"><span id="l-embed-time">0:00 / 0:00</span><input id="l-embed-seek" type="range" min="0" max="1000" value="0" aria-label="视频进度"></div>
           <button id="l-embed-full" type="button" aria-label="全屏">⛶</button>
         </div>
+        <div id="l-embed-error" role="alert" hidden></div>
       </div>
       <div class="row" id="l-seekbar"><span class="ipa small" id="l-cur">0:00</span><input type="range" id="l-seek" class="grow" min="0" max="1000" step="1" value="0" aria-label="播放进度"><span class="ipa small" id="l-dur">0:00</span><button class="btn quiet" id="l-full" title="全屏播放">全屏</button></div>
       <div id="pb-view" hidden>
@@ -2872,33 +2875,38 @@ function embedSrc(id,t){ var s=t!=null?Math.max(0,Math.floor(t)):0; if(/^BV/.tes
 var ytPlayer=null,ytApiPromise=null,ytVideoId='',ytChromeTimer=0;
 function ytChromeShow(){ var w=$('#l-embed-wrap'),c=$('#l-embed-controls'); if(!w||!c) return; w.classList.add('controls-on'); c.setAttribute('aria-hidden','false'); clearTimeout(ytChromeTimer); ytChromeTimer=setTimeout(function(){w.classList.remove('controls-on');c.setAttribute('aria-hidden','true')},2200); ytChromeUpdate() }
 function ytChromeUpdate(){ if(!ytPlayer) return; try{var p=ytPlayer.getPlayerState(); $('#l-embed-toggle').textContent=p===YT.PlayerState.PLAYING?'Ⅱ':'▶'; var now=ytPlayer.getCurrentTime()||0,dur=ytPlayer.getDuration()||0; $('#l-embed-time').textContent=tsFmt(now)+' / '+tsFmt(dur); if(dur&&document.activeElement!==$('#l-embed-seek')) $('#l-embed-seek').value=Math.round(now/dur*1000)}catch(e){} }
+function embedError(text){ var e=$('#l-embed-error'),p=$('#l-embed-poster'); if(e){e.textContent=text;e.hidden=false} if(p)p.hidden=false }
 function stopEmbeddedVideo(){ clearTimeout(ytChromeTimer); var w=$('#l-embed-wrap'),c=$('#l-embed-controls'); if(w) w.classList.remove('controls-on'); if(c)c.setAttribute('aria-hidden','true'); if(ytPlayer){try{ytPlayer.pauseVideo()}catch(e){}} var f=$('#l-embed iframe'); if(f&&/^BV/.test(L.id)){try{f.contentWindow.postMessage(JSON.stringify({command:'pause'}),'*')}catch(e){}} }
 function closeEmbeddedVideo(){ stopEmbeddedVideo(); $('#l-embed-poster').hidden=true; if(ytPlayer){try{ytPlayer.destroy()}catch(e){} ytPlayer=null} ytVideoId=''; var f=$('#l-embed iframe'); if(f){try{f.src='about:blank'}catch(e){}} var h=$('#l-embed'); if(h) h.innerHTML=''; $('#l-embed-hit').hidden=false; $('#l-embed-controls').hidden=false }
 function loadYouTubeApi(){
   if(window.YT&&window.YT.Player) return Promise.resolve();
   if(ytApiPromise) return ytApiPromise;
-  ytApiPromise=new Promise(function(resolve){
+  ytApiPromise=new Promise(function(resolve,reject){
+    var timer=setTimeout(function(){ytApiPromise=null;reject(new Error('YouTube API timeout'))},12000);
     var old=window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady=function(){ if(typeof old==='function') old(); resolve() };
-    if(!document.querySelector('script[data-youtube-iframe-api]')){ var sc=document.createElement('script'); sc.src='https://www.youtube.com/iframe_api'; sc.async=true; sc.setAttribute('data-youtube-iframe-api','1'); document.head.appendChild(sc) }
+    window.onYouTubeIframeAPIReady=function(){ clearTimeout(timer); if(typeof old==='function'){try{old()}catch(e){}} resolve() };
+    var sc=document.querySelector('script[data-youtube-iframe-api]');
+    if(!sc){sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';sc.async=true;sc.setAttribute('data-youtube-iframe-api','1');document.head.appendChild(sc)}
+    sc.onerror=function(){clearTimeout(timer);ytApiPromise=null;reject(new Error('YouTube API load failed'))};
   });
   return ytApiPromise;
 }
 function mountEmbed(id,t){
-  var host=$('#l-embed'), poster=$('#l-embed-poster');
+  var host=$('#l-embed'), poster=$('#l-embed-poster'), err=$('#l-embed-error'); if(err){err.hidden=true;err.textContent=''}
   if(ytPlayer){ try{ytPlayer.destroy()}catch(e){} ytPlayer=null }
   if(!host||host.tagName!=='DIV'){var fresh=document.createElement('div');fresh.id='l-embed';if(host&&host.parentNode)host.parentNode.replaceChild(fresh,host);else $('#l-embed-wrap').insertBefore(fresh,$('#l-embed-hit'));host=fresh}
   ytVideoId=id; host.innerHTML=''; poster.hidden=true;
-  if(/^BV/.test(id)){ var f=document.createElement('iframe'); f.title='视频播放器'; f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; f.allowFullscreen=true; f.referrerPolicy='strict-origin-when-cross-origin'; f.src=embedSrc(id,t); host.appendChild(f); $('#l-embed-hit').hidden=true; $('#l-embed-controls').hidden=true; return }
+  if(/^BV/.test(id)){ var f=document.createElement('iframe'); f.className='bili-player-frame'; f.title='视频播放器'; f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; f.allowFullscreen=true; f.referrerPolicy='strict-origin-when-cross-origin'; f.src=embedSrc(id,t); host.appendChild(f); $('#l-embed-hit').hidden=true; $('#l-embed-controls').hidden=true; return }
+  $('#l-embed-thumb').src='https://i.ytimg.com/vi/'+encodeURIComponent(id)+'/hqdefault.jpg'; poster.hidden=false;
   loadYouTubeApi().then(function(){
     if(L.id!==id||!host.isConnected) return;
-    $('#l-embed-thumb').src='https://i.ytimg.com/vi/'+encodeURIComponent(id)+'/hqdefault.jpg'; poster.hidden=false;
     $('#l-embed-hit').hidden=false; $('#l-embed-controls').hidden=false;
     ytPlayer=new YT.Player('l-embed',{videoId:id,playerVars:ytPlayerVars(t),events:{
-      onReady:function(){ var frame=$('#l-embed-wrap iframe'); if(frame){frame.classList.add('yt-player-frame');frame.removeAttribute('allowfullscreen');frame.setAttribute('allow','autoplay; encrypted-media; picture-in-picture')} if(L.id!==id){try{ytPlayer.destroy()}catch(e){} ytPlayer=null;return} setVideoSpeed($(L.subs?'#v-speed':(L.notes?'#n-speed':'#l-speed')).value); var pending=L.embedPending; if(pending&&pending.id===id){L.embedPending=null;try{ytPlayer.seekTo(pending.sec,true);if(pending.play)ytPlayer.playVideo()}catch(e){}} },
-      onStateChange:function(e){ L.embedPlaying=e.data===YT.PlayerState.PLAYING; if(e.data===YT.PlayerState.PLAYING){L.embedStarted=true;$('#l-embed-poster').hidden=true}else if(!L.embedStarted&&e.data===YT.PlayerState.CUED){$('#l-embed-poster').hidden=false} ytChromeUpdate(); try{lPP()}catch(x){} }
+      onReady:function(){ var frame=$('#l-embed-wrap iframe'); if(frame){frame.classList.add('yt-player-frame');frame.allowFullscreen=false;frame.removeAttribute('allowfullscreen');frame.setAttribute('allow','autoplay; encrypted-media');frame.referrerPolicy='strict-origin-when-cross-origin'} if(L.id!==id){try{ytPlayer.destroy()}catch(e){} ytPlayer=null;return} $('#l-embed-error').hidden=true; setVideoSpeed($(L.subs?'#v-speed':(L.notes?'#n-speed':'#l-speed')).value); var pending=L.embedPending; if(pending&&pending.id===id){L.embedPending=null;try{ytPlayer.seekTo(pending.sec,true);if(pending.play)ytPlayer.playVideo()}catch(e){}} if(L.embedPendingPlay){L.embedPendingPlay=false;try{ytPlayer.playVideo()}catch(e){}} },
+      onStateChange:function(e){ L.embedPlaying=e.data===YT.PlayerState.PLAYING; if(e.data===YT.PlayerState.PLAYING){L.embedStarted=true;$('#l-embed-poster').hidden=true}else if(!L.embedStarted&&e.data===YT.PlayerState.CUED){$('#l-embed-poster').hidden=false} ytChromeUpdate(); try{lPP()}catch(x){} },
+      onError:function(e){ if(e&&e.data===153) embedError('YouTube 要求有效的网页来源标识。请使用 HTTPS 在线版，不要从 file:// 本地文件打开。'); else if(e&&(e.data===101||e.data===150)) embedError('该视频不允许嵌入播放，请在 YouTube 打开原视频。'); else embedError('YouTube 视频加载失败，请刷新后重试。') }
     }});
-  });
+  }).catch(function(){embedError('YouTube 播放器没能加载。请检查网络，并从 HTTPS 在线版打开本页。')});
 }
 function embedSeek(t,play){
   if(!L.id) return; var sec=Math.max(0,+t||0),whole=Math.floor(sec);
@@ -2921,10 +2929,11 @@ function embedToggle(){
   ytChromeShow(); try{ if(ytPlayer.getPlayerState()===YT.PlayerState.PLAYING) ytPlayer.pauseVideo(); else ytPlayer.playVideo() }catch(e){}
 }
 $('#l-embed-hit').onclick=function(){embedToggle()};
-$('#l-embed-poster').onclick=function(){if(ytPlayer){L.embedStarted=true;ytChromeShow();try{ytPlayer.playVideo()}catch(e){}}};
-$('#l-embed-start').onclick=function(e){e.stopPropagation();if(ytPlayer){L.embedStarted=true;ytChromeShow();try{ytPlayer.playVideo()}catch(x){}}};
+function ytStart(){L.embedStarted=true;if(ytPlayer){ytChromeShow();try{ytPlayer.playVideo()}catch(e){}}else L.embedPendingPlay=true}
+$('#l-embed-poster').onclick=function(){ytStart()};
+$('#l-embed-start').onclick=function(e){e.stopPropagation();ytStart()};
 $('#l-embed-toggle').onclick=function(e){e.stopPropagation();embedToggle()};
-$('#l-embed-seek').oninput=function(){if(!ytPlayer)return;var d=ytPlayer.getDuration()||0;if(d)ytPlayer.seekTo(d*(+this.value/1000),true);ytChromeShow()};
+$('#l-embed-seek').oninput=function(){if(!ytPlayer)return;var d=ytPlayer.getDuration()||0;if(d){L.stopAt=null;ytPlayer.seekTo(d*(+this.value/1000),true)}ytChromeShow()};
 $('#l-embed-full').onclick=function(e){e.stopPropagation();ytChromeShow();var w=$('#l-embed-wrap');try{if(w.requestFullscreen)w.requestFullscreen();else if(w.webkitRequestFullscreen)w.webkitRequestFullscreen()}catch(x){}};
 setInterval(function(){
   if(!L.id||/^BV/.test(L.id)||!ytPlayer||!L.units||!L.units.length) return;
@@ -2997,14 +3006,14 @@ function lHint(){
 function lSave(){ try{LS.setItem('typing-desk-dict',JSON.stringify({url:$('#l-url').value,fname:$('#c-fname').value,yt:$('#l-yt').value,text:$('#l-text').value.slice(0,60000)}))}catch(e){} clTouch('dictation') }
 function lShow(){
   if(kP&&kHost===$('#l-platen')) kClose();
-  var u=L.units[L.i]; if(!u||L.notes||L.subs) return; L.checked=false; L.shown=false; L.peeked=$('#l-always').checked;
+  var u=L.units[L.i],lv=$('#l-video'),embedded=!!L.id,frame=$('#l-embed-wrap'); lv.hidden=!L.media||embedded; frame.hidden=!embedded; $('#l-seekbar').hidden=!L.media&&!embedded; $('#l-pause').hidden=!L.media&&!L.tts&&!embedded;
+  $('#l-seg').hidden=!L.media&&!L.tts&&!embedded; $('#l-speed-box').hidden=!L.media&&!L.tts&&!embedded; $('#l-tts').hidden=!!L.tts; $('#l-load').textContent=L.pb?'整本文字载入为文章':'字幕载入为文章'; $('#l-shift-box').hidden=!L.media&&!embedded;
+  if(!u||L.notes||L.subs) return; L.checked=false; L.shown=false; L.peeked=$('#l-always').checked;
   $('#l-pos').textContent='第 '+(L.i+1)+' / '+L.units.length+' 句'+(u.t!=null?' · '+tsFmt(u.t):'');
   $('#l-bar').style.width=(L.i/L.units.length*100)+'%';
   var k=Object.keys(L.scores); $('#l-avg').textContent=k.length?Math.round(k.reduce(function(a,x){return a+L.scores[x]},0)/k.length):'–';
   L.hint=$('#l-always').checked?2:0; lHint();
   $('#l-input').value=''; $('#l-res').textContent=''; $('#l-check').textContent='对答案';
-  var lv=$('#l-video'), embedded=!!L.id, frame=$('#l-embed-wrap'); lv.hidden=!L.media||embedded; frame.hidden=!embedded; $('#l-seekbar').hidden=!L.media&&!embedded; $('#l-pause').hidden=!L.media&&!L.tts&&!embedded; 
-  $('#l-seg').hidden=!L.media&&!L.tts&&!embedded; $('#l-speed-box').hidden=!L.media&&!L.tts&&!embedded; $('#l-tts').hidden=!!L.tts; $('#l-load').textContent=L.pb?'整本文字载入为文章':'字幕载入为文章'; $('#l-shift-box').hidden=!L.media&&!embedded;
   var a=$('#l-play'); a.hidden=true; lYtOpen();
   if(L.id) a.href=vidUrl(L.id,u.t);
   $('#l-tip').textContent=L.media?(u.t!=null?'':'字幕没有时间点，请用播放器自己控制。'):L.id?(u.t!=null?'视频已嵌入本页；可用上一句、下一句、播放和进度条控制。':'字幕没有时间点，逐句跳转不可用。'):'';
