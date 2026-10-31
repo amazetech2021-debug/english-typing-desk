@@ -2880,7 +2880,7 @@ function loadYouTubeApi(){
 function mountEmbed(id,t){
   var host=$('#l-embed');
   if(ytPlayer){ try{ytPlayer.destroy()}catch(e){} ytPlayer=null }
-  if(!host){host=document.createElement('div');host.id='l-embed';$('#l-embed-wrap').insertBefore(host,$('#l-embed-hit'))}
+  if(!host||host.tagName!=='DIV'){var fresh=document.createElement('div');fresh.id='l-embed';if(host&&host.parentNode)host.parentNode.replaceChild(fresh,host);else $('#l-embed-wrap').insertBefore(fresh,$('#l-embed-hit'));host=fresh}
   ytVideoId=id; host.innerHTML='';
   if(/^BV/.test(id)){ var f=document.createElement('iframe'); f.title='视频播放器'; f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; f.allowFullscreen=true; f.referrerPolicy='strict-origin-when-cross-origin'; f.src=embedSrc(id,t); host.appendChild(f); $('#l-embed-hit').hidden=true; $('#l-embed-controls').hidden=true; return }
   loadYouTubeApi().then(function(){
