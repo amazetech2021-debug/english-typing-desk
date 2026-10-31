@@ -688,7 +688,7 @@ body.haspen .penbtn{display:block}
 #l-work:has(.typebox.pen) #l-video{max-height:min(300px,30vh)}
 #l-video{width:100%;max-height:min(520px,48vh);transition:max-height .18s ease;border-radius:12px;border:1px solid var(--line);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,76px));z-index:18;background:#000;box-shadow:0 0 0 10px var(--bg),0 14px 12px -8px var(--shadow)}
 #l-embed-wrap{width:100%;aspect-ratio:16/9;max-height:min(520px,56vh);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,76px));z-index:18;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 0 0 10px var(--bg),0 14px 12px -8px var(--shadow)}
-#l-embed-wrap iframe{display:block;width:100%;height:100%;border:0}
+#l-embed-wrap iframe,#l-embed-wrap>div{display:block;width:100%;height:100%;border:0}
 input[type=file]{max-width:100%}
 a.btn{text-decoration:none;display:inline-block}
 #l-line .ok{color:var(--ok)}
@@ -1090,7 +1090,7 @@ html.lfocus{--tabs-h:0px}
       </div>
       <div class="bar"><i id="l-bar"></i></div>
       <video id="l-video" playsinline preload="auto" hidden></video>
-      <div id="l-embed-wrap" hidden><iframe id="l-embed" title="视频播放器" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+      <div id="l-embed-wrap" hidden><div id="l-embed"></div></div>
       <div class="row" id="l-seekbar"><span class="ipa small" id="l-cur">0:00</span><input type="range" id="l-seek" class="grow" min="0" max="1000" step="1" value="0" aria-label="播放进度"><span class="ipa small" id="l-dur">0:00</span><button class="btn quiet" id="l-full" title="全屏播放">全屏</button></div>
       <div id="pb-view" hidden>
         <div class="pbframe"><div class="pbpage" id="pb-page"><img id="pb-img" alt="" hidden draggable="false"><p class="muted small" id="pb-none" hidden>这一页没有图片。</p></div></div>
@@ -2841,12 +2841,51 @@ function ytId(u){var b=String(u).match(/bilibili\.com\/(?:video\/|.*[?&]bvid=)(B
 function vidUrl(id,t){ var s=t!=null?Math.max(0,Math.floor(t)):null; if(/^BV/.test(id)) return 'https://www.bilibili.com/video/'+id+(s!=null?'?t='+s:''); return 'https://www.youtube.com/watch?v='+id+(s!=null?'&t='+s+'s':'') }
 function directVideoUrl(raw){ try{var u=new URL(raw); return /^https?:$/.test(u.protocol)&&/\.(mp4|m4v|webm|ogv|ogg|mov)$/i.test(u.pathname)}catch(e){return false} }
 function embedSrc(id,t){ var s=t!=null?Math.max(0,Math.floor(t)):0; return /^BV/.test(id)?'https://player.bilibili.com/player.html?bvid='+encodeURIComponent(id)+'&page=1&high_quality=1&danmaku=0&t='+s:'https://www.youtube.com/embed/'+encodeURIComponent(id)+'?enablejsapi=1&origin='+encodeURIComponent(location.origin)+'&playsinline=1&controls=1&start='+s }
-function embedSeek(t,play){ if(!L.id) return; var sec=Math.max(0,Math.floor(t||0)), f=$('#l-embed'); L.embedIndex=L.units&&L.units.length?Math.max(0,L.units.reduce(function(k,u,i){return u.t!=null&&u.t<=sec?i:k},0)):0;
-  if(/^BV/.test(L.id)){ f.src=embedSrc(L.id,sec); return }
-  function send(){ if(!f.contentWindow) return; f.contentWindow.postMessage(JSON.stringify({event:'command',func:'seekTo',args:[sec,true]}),'https://www.youtube.com'); if(play) f.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'https://www.youtube.com') }
-  if(!f.src){ f.src=embedSrc(L.id,sec); f.onload=function(){setTimeout(send,250)} } else {send();setTimeout(send,300)}
+var ytPlayer=null,ytApiPromise=null,ytVideoId='';
+function loadYouTubeApi(){
+  if(window.YT&&window.YT.Player) return Promise.resolve();
+  if(ytApiPromise) return ytApiPromise;
+  ytApiPromise=new Promise(function(resolve){
+    var old=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=function(){ if(typeof old==='function') old(); resolve() };
+    if(!document.querySelector('script[data-youtube-iframe-api]')){ var sc=document.createElement('script'); sc.src='https://www.youtube.com/iframe_api'; sc.async=true; sc.setAttribute('data-youtube-iframe-api','1'); document.head.appendChild(sc) }
+  });
+  return ytApiPromise;
 }
-function embedToggle(){ var f=$('#l-embed'); if(/^BV/.test(L.id)){ return } var fn=L.embedPlaying?'pauseVideo':'playVideo'; L.embedPlaying=!L.embedPlaying; if(f.contentWindow) f.contentWindow.postMessage(JSON.stringify({event:'command',func:fn,args:[]}),'https://www.youtube.com') }
+function mountEmbed(id,t){
+  var host=$('#l-embed');
+  if(ytPlayer){ try{ytPlayer.destroy()}catch(e){} ytPlayer=null }
+  ytVideoId=id; host.innerHTML='';
+  if(/^BV/.test(id)){ var f=document.createElement('iframe'); f.title='视频播放器'; f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; f.allowFullscreen=true; f.referrerPolicy='strict-origin-when-cross-origin'; f.src=embedSrc(id,t); host.appendChild(f); return }
+  loadYouTubeApi().then(function(){
+    if(L.id!==id||!host.isConnected) return;
+    ytPlayer=new YT.Player('l-embed',{videoId:id,playerVars:{playsinline:1,controls:1,enablejsapi:1,origin:location.origin,start:Math.max(0,Math.floor(t||0))},events:{
+      onReady:function(){ if(L.id!==id){try{ytPlayer.destroy()}catch(e){} ytPlayer=null} },
+      onStateChange:function(e){ L.embedPlaying=e.data===YT.PlayerState.PLAYING }
+    }});
+  });
+}
+function embedSeek(t,play){
+  if(!L.id) return; var sec=Math.max(0,Math.floor(t||0));
+  L.embedIndex=L.units&&L.units.length?Math.max(0,L.units.reduce(function(k,u,i){return u.t!=null&&u.t<=sec?i:k},0)):0;
+  if(/^BV/.test(L.id)){ var f=$('#l-embed iframe'); if(f) f.src=embedSrc(L.id,sec); return }
+  if(ytPlayer&&ytVideoId===L.id){ try{ytPlayer.seekTo(sec,true); if(play) ytPlayer.playVideo()}catch(e){} }
+}
+function embedToggle(){
+  if(/^BV/.test(L.id)) return;
+  if(!ytPlayer) return;
+  try{ if(ytPlayer.getPlayerState()===YT.PlayerState.PLAYING) ytPlayer.pauseVideo(); else ytPlayer.playVideo() }catch(e){}
+}
+setInterval(function(){
+  if(!L.id||/^BV/.test(L.id)||!ytPlayer||!L.units||!L.units.length) return;
+  var state; try{state=ytPlayer.getPlayerState()}catch(e){return}
+  if(state!==YT.PlayerState.PLAYING&&state!==YT.PlayerState.PAUSED&&state!==YT.PlayerState.BUFFERING) return;
+  var sec=ytPlayer.getCurrentTime()-L.shift, k=-1;
+  L.units.forEach(function(u,j){if(u.t!=null&&u.t<=sec+0.12) k=j});
+  if(k<0) k=0;
+  if(L.subs){ if(k!==L.i){L.i=k; vCur=-1} vMark(false) }
+  else if(k!==L.i&&L.units[k]&&L.units[k].t!=null){ L.i=k; $('#l-pos').textContent='第 '+(k+1)+' / '+L.units.length+' 句 · '+tsFmt(L.units[k].t); $('#l-bar').style.width=(k/L.units.length*100)+'%' }
+},300);
 function tsSec(s){var p=s.split(':').map(Number); return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1]}
 function tsFmt(t){var m=Math.floor(t/60),s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s}
 function parseTranscript(raw){
@@ -2909,7 +2948,7 @@ function lShow(){
   var k=Object.keys(L.scores); $('#l-avg').textContent=k.length?Math.round(k.reduce(function(a,x){return a+L.scores[x]},0)/k.length):'–';
   L.hint=$('#l-always').checked?2:0; lHint();
   $('#l-input').value=''; $('#l-res').textContent=''; $('#l-check').textContent='对答案';
-  var lv=$('#l-video'), embedded=!!L.id, frame=$('#l-embed-wrap'); lv.hidden=!L.media||embedded; frame.hidden=!embedded; $('#l-seekbar').hidden=embedded; $('#l-pause').hidden=embedded; if(embedded){$('#l-embed').src=embedSrc(L.id,L.units[0]&&L.units[0].t)}else{$('#l-embed').removeAttribute('src')}
+  var lv=$('#l-video'), embedded=!!L.id, frame=$('#l-embed-wrap'); lv.hidden=!L.media||embedded; frame.hidden=!embedded; $('#l-seekbar').hidden=embedded; $('#l-pause').hidden=embedded; 
   $('#l-seg').hidden=!L.media&&!L.tts; $('#l-speed-box').hidden=!L.media&&!L.tts; $('#l-tts').hidden=!!L.tts; $('#l-load').textContent=L.pb?'整本文字载入为文章':'字幕载入为文章'; $('#l-shift-box').hidden=!L.media&&!embedded;
   var a=$('#l-play'); a.hidden=!embedded; lYtOpen();
   if(L.id) a.href=vidUrl(L.id,u.t);
@@ -2950,7 +2989,7 @@ $('#l-play').onclick=function(){ var u=L.units[L.i]; if(L.id) embedSeek(u&&u.t!=
 /* the YouTube link in the video card: shows how to get its subtitles, and fills the terminal's link box */
 function lYt(){ var v=$('#l-yt').value.trim(), id=ytId(v), direct=directVideoUrl(v), h=$('#l-yt-help'); h.hidden=!v; $('#l-yt-wave').hidden=$('#l-yt-more').hidden=!id; $('#l-yt-st').textContent=id?'✓ 找到视频。':(direct?'✓ 找到可直接播放的视频链接。':'这个链接暂不支持站内播放。'); $('#l-vclear').hidden=$('#l-keep').hidden&&!v;
   if(id&&(!$('#l-url').value.trim()||ytId($('#l-url').value)!==id)){ $('#l-url').value=v; lCmds() } }
-function lBegin(units,id,media){ setTimeout(function(){ try{ plUi() }catch(e){} },50);
+function lBegin(units,id,media){ if(id&&id!==ytVideoId) mountEmbed(id,units[0]&&units[0].t); else if(!id&&ytPlayer){try{ytPlayer.destroy()}catch(e){} ytPlayer=null;ytVideoId='';$('#l-embed').innerHTML=''} setTimeout(function(){ try{ plUi() }catch(e){} },50);
   $('#pb-view').hidden=true; $('#l-work').classList.remove('pbm'); try{ if($('#pb-view').classList.contains('pbfull')) pbFull(false) }catch(e){}
   L={id:id,media:media||'',units:units,i:0,scores:{},checked:false,stopAt:null,shift:0,tts:!media&&!id}; $('#l-shift-val').textContent='0.0s';
   var lv=$('#l-video'); if(L.media){ if(lv.getAttribute('src')!==L.media) lv.src=L.media } else { lv.pause(); lv.removeAttribute('src') } $('#l-setup').hidden=true; $('#l-work').hidden=false; lv.hidden=!L.media;
@@ -2980,7 +3019,7 @@ function pbDock(){ var b=$('#pb-ocr'), m=L.subs?2:(L.notes?1:0); if(!b) return; 
 /* ---------- watch with the whole transcript: follows the video, tap a word to pause and look it up ---------- */
 var vFail={}, vBusy=false, vCur=-1, vHold=0;
 function vTimed(){ return !!(L.media||L.id)&&L.units.some(function(u){return u.t!=null}) }
-function vIndex(){ if(L.id) return L.embedIndex||L.i; if(!vTimed()) return L.i; var ct=$('#l-video').currentTime-L.shift+0.15, k=-1; L.units.forEach(function(u,j){ if(u.t!=null&&u.t<=ct) k=j }); return k<0?0:k }
+function vIndex(){ if(L.id){ if(!/^BV/.test(L.id)&&ytPlayer){try{var ct=ytPlayer.getCurrentTime()-L.shift,k=-1;L.units.forEach(function(u,j){if(u.t!=null&&u.t<=ct+0.12)k=j});return k<0?0:k}catch(e){}} return L.embedIndex||L.i } if(!vTimed()) return L.i; var ct=$('#l-video').currentTime-L.shift+0.15, k=-1; L.units.forEach(function(u,j){ if(u.t!=null&&u.t<=ct) k=j }); return k<0?0:k }
 function vZhOf(t){ return ((kTr[t]||{}).zh)||'' }
 function vRender(){
   if(!L.subs) return; var box=$('#v-list'); $('#l-work').classList.toggle('rbon',CJK()&&RUBY.on);
