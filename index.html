@@ -1033,7 +1033,7 @@ html.lfocus{--tabs-h:0px}
           </div>
           <div class="lcard">
             <div class="lhead"><span class="lnum">2</span><strong>每页的文字</strong><span class="grow"></span><div class="seg" role="group" aria-label="文字从哪里来"><button id="pb-src-ai" aria-pressed="true">千问识别</button><button id="pb-src-me" aria-pressed="false">用我的文字</button></div></div>
-            <div id="pb-ai-box"><p class="muted small">打开绘本后，千问会在后台识别所有页面的文字（同时识别 3 页，从当前页往后）；认过的会保存，不再重复调用。先填入千问 API Key 和接口地址，再开始阅读。</p><div class="cin" style="margin-top:10px"><label class="cfield"><span class="small">千问 API Key</span><input id="pb-qwen-key" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴百炼 API Key"></label><label class="cfield"><span class="small">API 接口地址（可填兼容代理）</span><input id="pb-qwen-endpoint" type="url" autocomplete="url" spellcheck="false" value="https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"></label></div><div class="row" style="margin-top:8px"><button class="btn" id="pb-qwen-save">保存并开始识别</button><span id="pb-qwen-status" class="small muted">Key 只暂存在当前浏览器标签页，不会上传到 GitHub。</span></div><p class="small muted" style="margin-top:6px">模型：qwen3-vl-plus。浏览器直连可能受跨域限制；如请求被拦截，请在接口地址填入你自己的兼容 API 代理地址。不要把长期有效的 Key 放在公共设备上。</p></div>
+            <div id="pb-ai-box"><p class="muted small">打开绘本后，千问会在后台识别所有页面的文字（同时识别 3 页，从当前页往后）；认过的会保存，不再重复调用。先填入千问 API Key 和接口地址，再开始阅读。</p><div class="cin" style="margin-top:10px"><label class="cfield"><span class="small">千问 API Key</span><input id="pb-qwen-key" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴百炼 API Key"></label><label class="cfield"><span class="small">API 接口地址（可填兼容代理）</span><input id="pb-qwen-endpoint" type="url" autocomplete="url" spellcheck="false" value="https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"></label></div><div class="row" style="margin-top:8px"><button class="btn" id="pb-qwen-save">保存并开始识别</button><span id="pb-qwen-status" class="small muted">Key 只暂存在当前浏览器标签页，不会上传到 GitHub。</span></div><p class="small muted" style="margin-top:6px">模型：qwen3-vl-plus。百炼 API Key 与接口地址必须属于同一地域。浏览器直连可能受跨域限制；如请求被拦截，请填写你自己的兼容 API 代理地址。不要在公共设备上使用长期有效的 Key。</p></div>
             <div id="pb-me-box" hidden>
               <p class="muted small">选终端认好的「.pages.txt」，或直接粘贴。用「=== 第 1 页 ===」分页，没有分页就算一页。可以一次选多个文字文件：文件名和书架里的绘本同名（如「斑马.pdf」对「斑马.pages.txt」或「斑马.txt」），就会自动放到那一本里。没有绘本也能只用文字学；只有绘本、不填文字，就在「随手记」里边看边记。</p>
               <textarea id="pb-paste" rows="5" spellcheck="false" aria-label="每页的文字" placeholder="=== 第 1 页 ===&#10;Pippi lands on Mars.&#10;=== 第 2 页 ===&#10;She sees a red wolf."></textarea>
@@ -4462,11 +4462,14 @@ async function pbOcr(i){
   try{ endpoint=pbQwenEndpoint(PBQ.endpoint) }catch(e){ throw e }
   var jpg=await pShrink(pg.blob,1500,0.86), dataUrl=await pbBlobDataUrl(jpg);
   var prompt='请准确识别这张绘本页面上用于学习的'+LN()+'文字，按自然阅读顺序逐行输出；每句或短标题单独一行。只抄录，不改写、不翻译；忽略页码、Logo、水印和其他语言文字。页面没有'+LN()+'文字时只返回空字符串。';
-  var response;
+  var response,payload=null,controller=new AbortController(),timer=setTimeout(function(){controller.abort()},90000);
   try{
-    response=await fetch(endpoint,{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen3-vl-plus',stream:false,messages:[{role:'user',content:[{type:'image_url',image_url:{url:dataUrl}},{type:'text',text:prompt}]}]})});
-  }catch(e){ throw {code:'network',msg:'千问接口连接失败：请检查网络和接口地址；如果浏览器提示跨域，请填写支持跨域的 API 代理地址。'} }
-  var payload=null; try{ payload=await response.json() }catch(e){}
+    response=await fetch(endpoint,{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen3-vl-plus',stream:false,messages:[{role:'user',content:[{type:'image_url',image_url:{url:dataUrl}},{type:'text',text:prompt}]}]}),signal:controller.signal});
+    try{ payload=await response.json() }catch(e){}
+  }catch(e){
+    if(e&&e.name==='AbortError') throw {code:'timeout',msg:'千问识别等待超过 90 秒，已停止本次请求；请检查网络、接口地址和代理后重试。'};
+    throw {code:'network',msg:'千问接口连接失败：请检查网络和接口地址；如果浏览器提示跨域，请填写支持跨域的 API 代理地址。'};
+  }finally{ clearTimeout(timer) }
   if(!response.ok){
     var detail=payload&&payload.error&&(payload.error.message||payload.error.code)||payload&&payload.message||'';
     var code=response.status===429?'rate_limited':(response.status===401||response.status===403?'auth':'http_'+response.status);
