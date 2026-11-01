@@ -1032,8 +1032,8 @@ html.lfocus{--tabs-h:0px}
             <div class="row lact"><label class="btn" for="pb-file" id="pb-file-btn">选择文件</label><input type="file" id="pb-file" class="vh" accept=".pdf,.pptx,.ppt,application/vnd.ms-powerpoint,.txt,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,image/*" multiple><button class="btn" id="pb-up" hidden title="传到云端后，iPad、iPhone 等其他设备也能打开">上传云端</button><span class="grow"></span><button class="btn quiet" id="pb-clear" hidden title="清掉这台设备和云端保存的绘本">清除</button></div>
           </div>
           <div class="lcard">
-            <div class="lhead"><span class="lnum">2</span><strong>每页的文字</strong><span class="grow"></span><div class="seg" role="group" aria-label="文字从哪里来"><button id="pb-src-ai" aria-pressed="true">Claude 识别</button><button id="pb-src-me" aria-pressed="false">用我的文字</button></div></div>
-            <div id="pb-ai-box"><p class="muted small">打开绘本后，Claude 会在后台提前把所有页的文字一起认完（同时认 3 页，从当前页往后），你可以边等边看；认过的会保存，以后不再重复认，也不再用 Claude 用量。</p></div>
+            <div class="lhead"><span class="lnum">2</span><strong>每页的文字</strong><span class="grow"></span><div class="seg" role="group" aria-label="文字从哪里来"><button id="pb-src-ai" aria-pressed="true">千问识别</button><button id="pb-src-me" aria-pressed="false">用我的文字</button></div></div>
+            <div id="pb-ai-box"><p class="muted small">打开绘本后，千问会在后台识别所有页面的文字（同时识别 3 页，从当前页往后）；认过的会保存，不再重复调用。先填入千问 API Key 和接口地址，再开始阅读。</p><div class="cin" style="margin-top:10px"><label class="cfield"><span class="small">千问 API Key</span><input id="pb-qwen-key" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴百炼 API Key"></label><label class="cfield"><span class="small">API 接口地址（可填兼容代理）</span><input id="pb-qwen-endpoint" type="url" autocomplete="url" spellcheck="false" value="https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"></label></div><div class="row" style="margin-top:8px"><button class="btn" id="pb-qwen-save">保存并开始识别</button><span id="pb-qwen-status" class="small muted">Key 只暂存在当前浏览器标签页，不会上传到 GitHub。</span></div><p class="small muted" style="margin-top:6px">模型：qwen3-vl-plus。浏览器直连可能受跨域限制；如请求被拦截，请在接口地址填入你自己的兼容 API 代理地址。不要把长期有效的 Key 放在公共设备上。</p></div>
             <div id="pb-me-box" hidden>
               <p class="muted small">选终端认好的「.pages.txt」，或直接粘贴。用「=== 第 1 页 ===」分页，没有分页就算一页。可以一次选多个文字文件：文件名和书架里的绘本同名（如「斑马.pdf」对「斑马.pages.txt」或「斑马.txt」），就会自动放到那一本里。没有绘本也能只用文字学；只有绘本、不填文字，就在「随手记」里边看边记。</p>
               <textarea id="pb-paste" rows="5" spellcheck="false" aria-label="每页的文字" placeholder="=== 第 1 页 ===&#10;Pippi lands on Mars.&#10;=== 第 2 页 ===&#10;She sees a red wolf."></textarea>
@@ -1071,7 +1071,7 @@ html.lfocus{--tabs-h:0px}
 <div class="ccard"><div class="chd"><span class="lnum">2</span><strong class="grow">把整个文件夹里的视频都转成 mp4</strong><button class="btn" data-copy="c-convb">复制</button></div><p class="small muted">只转 RMVB、AVI、FLV、WMV、MKV、TS、MPG、VOB；已经有同名 mp4 的会跳过。转完可以用「电脑里的视频 / 音频」里的「识别整个文件夹」一起识别字幕。</p><label class="cfield"><span class="small"><strong>文件夹</strong><span class="muted"> · 不填就是「下载」文件夹；也可以填完整路径</span></span><input type="text" id="cv-dir" placeholder="/Users/…/Dexter Season1" spellcheck="false" autocapitalize="off" autocomplete="off"></label><pre id="c-convb"></pre></div>
 </div>
 <div class="cgrp" data-cg="book" hidden>
-<p class="muted small">用 Mac 自带的文字识别，一页一页认出文字，存成「.pages.txt」（不耗 Claude 用量）。在上面「绘本阅读」右边选「用我的文字」导入它。图片要按页码命名（1.jpg、2.jpg…）放在同一个文件夹。</p>
+<p class="muted small">用 Mac 自带的文字识别，一页一页认出文字，存成「.pages.txt」（本机识别，不调用云端 API）。在上面「绘本阅读」右边选「用我的文字」导入它。图片要按页码命名（1.jpg、2.jpg…）放在同一个文件夹。</p>
 <div class="cshare"><div class="cin"><label class="cfield"><span class="small"><strong>绘本上的文字是哪种语言</strong><span class="muted"> · 选错会认成乱码</span></span><select id="c-olang"><option value="en">英语</option><option value="fr">法语</option><option value="ja">日语</option><option value="zh">中文</option></select></label></div></div>
 <div class="ccard"><div class="chd"><span class="lnum">1</span><strong class="grow">识别绘本每一页的文字</strong><button class="btn" data-copy="c-ocr">复制</button></div><label class="cfield"><span class="small"><strong>绘本或图片文件夹</strong><span class="muted"> · 一本 PDF、一个图片文件夹，或者放了很多本 PDF 的文件夹（会一本一本认）</span></span><input type="text" id="c-book" placeholder="绘本.pdf 或 /Users/…/绘本.pdf" spellcheck="false" autocapitalize="off" autocomplete="off"></label><pre id="c-ocr" style="max-height:9em;overflow:auto"></pre><span class="muted small" id="c-ocr-tip"></span><button type="button" class="small" id="c-ocr-again" hidden style="align-self:flex-start;background:none;border:0;padding:0;color:var(--muted);text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer">识别工具出问题、要重新安装？点这里显示安装命令</button></div>
 </div>
@@ -3642,7 +3642,7 @@ function ttsCmd(){
   else { var bk=ttsBook(), bn=ttsName(bk.name); if(bk.pages.length){ if(split==='all'){ items.push([bn+'.mp3',bk.pages.map(function(p){return p[1]}).join('\n\n')]); info='绘本 · '+bk.pages.length+' 页有文字 → 「朗读音频/'+bn+'.mp3」' } else { var w=String(Math.max.apply(null,bk.pages.map(function(p){return p[0]+1}))).length; bk.pages.forEach(function(p){ var n=String(p[0]+1); while(n.length<Math.max(2,w)) n='0'+n; items.push([bn+'/第'+n+'页.mp3',p[1]]) }); info='绘本 · '+bk.pages.length+' 页有文字 → 「朗读音频/'+bn+'/」里每页一个 mp3' } } }
   $('#tts-info').textContent=items.length?info:'生成语音';
   var pre=$('#c-tts'); pre.parentNode.classList.toggle('wait',!items.length);
-  if(!items.length){ pre.textContent='（先准备好内容）'; $('#tts-tip').textContent=src==='article'?'「朗读」页里还没有文章。':src==='subs'?'字幕框是空的：先在上面「字幕」里粘贴或选字幕文件。':'还没有每页的文字：先在「绘本阅读」里导入文字，或用 Claude 识别过的绘本。'; return }
+  if(!items.length){ pre.textContent='（先准备好内容）'; $('#tts-tip').textContent=src==='article'?'「朗读」页里还没有文章。':src==='subs'?'字幕框是空的：先在上面「字幕」里粘贴或选字幕文件。':'还没有每页的文字：先在「绘本阅读」里导入文字，或用千问识别过的绘本。'; return }
   var data={dir:base,voice:$('#tts-voice').value,rate:$('#tts-rate').value,items:items}, b64=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
   var py=['import asyncio,base64,json,os,subprocess','import edge_tts','d=json.loads(base64.b64decode("'+b64+'").decode("utf-8"))','root=os.path.expanduser(d["dir"])',
     'async def main():','    n=len(d["items"])','    for i,(name,text) in enumerate(d["items"]):','        p=os.path.join(root,name); os.makedirs(os.path.dirname(p),exist_ok=True)',
@@ -4419,15 +4419,65 @@ async function pbPage(i){
   var saved=b.texts[i]; if(saved&&typeof saved.t==='string'){ pg.t=saved.t; pg.o=saved.o?1:0; pg.done=1 }
   return pg;
 }
+function pbQwenEndpoint(raw){
+  var u; try{ u=new URL(String(raw||'').trim()) }catch(e){ throw {code:'endpoint',msg:'千问 API 接口地址格式不正确。'} }
+  if(u.protocol!=='https:') throw {code:'endpoint',msg:'接口地址必须以 https:// 开头。'};
+  u.pathname=u.pathname.replace(/\/+$/,'');
+  if(!/\/chat\/completions$/.test(u.pathname)) u.pathname+='/chat/completions';
+  return u.toString();
+}
+var PBQ={key:'',endpoint:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'};
+function pbQwenLoad(){
+  try{ PBQ.key=sessionStorage.getItem('typing-desk-qwen-key')||''; PBQ.endpoint=sessionStorage.getItem('typing-desk-qwen-endpoint')||PBQ.endpoint }catch(e){}
+  $('#pb-qwen-key').value=PBQ.key; $('#pb-qwen-endpoint').value=PBQ.endpoint;
+  if(PBQ.key) $('#pb-qwen-status').textContent='设置已载入；Key 仅暂存在当前标签页。';
+}
+function pbQwenStatus(text,isErr){
+  var el=$('#pb-qwen-status'); if(!el) return;
+  el.className=isErr?'small err':'small muted'; el.textContent=text||'';
+}
+function pbQwenSave(){
+  var key=$('#pb-qwen-key').value.trim(), endpoint='';
+  if(!key){ pbQwenStatus('请先粘贴百炼 API Key。',true); return false }
+  try{ endpoint=pbQwenEndpoint($('#pb-qwen-endpoint').value) }catch(e){ pbQwenStatus(e.msg||'接口地址无效。',true); return false }
+  PBQ.key=key; PBQ.endpoint=endpoint; $('#pb-qwen-endpoint').value=endpoint;
+  try{ sessionStorage.setItem('typing-desk-qwen-key',key); sessionStorage.setItem('typing-desk-qwen-endpoint',endpoint); pbQwenStatus(PB&&PB.src!=='me'&&PB.kind!=='txt'?'已保存到当前标签页，正在识别绘本…':'已保存到当前标签页；选好绘本后即可识别。') }
+  catch(e){ pbQwenStatus('本页已载入设置，但浏览器未允许暂存；关闭页面后需重新填写。') }
+  if(PB&&PB.src!=='me'&&PB.kind!=='txt') pbBulk();
+  return true;
+}
+$('#pb-qwen-save').onclick=pbQwenSave;
+pbQwenLoad();
+function pbBlobDataUrl(blob){
+  return new Promise(function(resolve,reject){
+    var r=new FileReader(); r.onload=function(){ resolve(String(r.result||'')) }; r.onerror=function(){ reject(new Error('无法读取页面图片')) }; r.readAsDataURL(blob);
+  });
+}
 async function pbOcr(i){
-  var b=PB, pg=b.pages[i]; if(!pg) return false;
+  var b=PB, pg=b&&b.pages[i]; if(!pg) return false;
   if(!pg.blob&&pg.img){ try{ var rr=await fetch(pg.img); if(rr.ok) pg.blob=await rr.blob() }catch(e){} }
-  if(!pg.blob) throw {msg:'这一页的图片没有取到，请检查网络后点「重新识别」。'};
-  if(!claudeSample) throw {msg:'这个窗口连不上 Claude，认不了图片上的文字。'};
-  var lim=null; try{ lim=await claudeSample.limits() }catch(e){} if(!lim||!lim.images) throw {msg:'这个窗口现在不能把图片发给 Claude。请关掉页面重新打开，并允许发送图片。'};
-  var jpg=await pShrink(pg.blob,1500,0.86);
-  var d=await claudeSample.json('The image is one page of a picture book or a slide used by a learner of '+LN()+'. Transcribe all the '+LN()+' text printed on the page, exactly as printed and in natural reading order, one sentence (or one short heading) per line. Fix nothing, translate nothing. Leave out page numbers, logos, watermarks and text in other languages. Reply with only a JSON object: {"text":"line 1\\nline 2"}. Use an empty string if the page has no '+LN()+' text.',{images:[jpg],cache:false});
-  if(PB!==b) return false; pg.t=String((d&&d.text)||'').trim(); pg.o=1; pg.done=1; b.texts[i]={t:pg.t,o:1}; pbSave(); return true;
+  if(!pg.blob) throw {code:'image',msg:'这一页的图片没有取到，请检查网络后点「重新识别」。'};
+  var key=PBQ.key, endpoint;
+  if(!key) throw {code:'missing_key',msg:'请先在「千问识别」区域填写 API Key，再点「重新识别」。'};
+  try{ endpoint=pbQwenEndpoint(PBQ.endpoint) }catch(e){ throw e }
+  var jpg=await pShrink(pg.blob,1500,0.86), dataUrl=await pbBlobDataUrl(jpg);
+  var prompt='请准确识别这张绘本页面上用于学习的'+LN()+'文字，按自然阅读顺序逐行输出；每句或短标题单独一行。只抄录，不改写、不翻译；忽略页码、Logo、水印和其他语言文字。页面没有'+LN()+'文字时只返回空字符串。';
+  var response;
+  try{
+    response=await fetch(endpoint,{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen3-vl-plus',stream:false,messages:[{role:'user',content:[{type:'image_url',image_url:{url:dataUrl}},{type:'text',text:prompt}]}]})});
+  }catch(e){ throw {code:'network',msg:'千问接口连接失败：请检查网络和接口地址；如果浏览器提示跨域，请填写支持跨域的 API 代理地址。'} }
+  var payload=null; try{ payload=await response.json() }catch(e){}
+  if(!response.ok){
+    var detail=payload&&payload.error&&(payload.error.message||payload.error.code)||payload&&payload.message||'';
+    var code=response.status===429?'rate_limited':(response.status===401||response.status===403?'auth':'http_'+response.status);
+    var msg=response.status===401||response.status===403?'API Key 无效或没有该地域/模型权限。':response.status===429?'千问调用频率或额度受限，请稍后重试。':'千问接口返回错误（HTTP '+response.status+'）'+(detail?'：'+detail:'');
+    throw {code:code,msg:msg};
+  }
+  var content=payload&&payload.choices&&payload.choices[0]&&payload.choices[0].message&&payload.choices[0].message.content;
+  if(Array.isArray(content)) content=content.map(function(x){ return typeof x==='string'?x:(x&&x.text)||'' }).join('');
+  if(typeof content!=='string') throw {code:'empty_response',msg:'千问没有返回可读取的文字，请重试。'};
+  if(PB!==b) return false;
+  pg.t=content.trim(); pg.o=1; pg.done=1; b.texts[i]={t:pg.t,o:1}; pbSave(); return true;
 }
 function pbApply(units){
   if(L.units&&L.units.length) PB.mode=L.follow?3:(L.subs?2:(L.notes?1:0));
@@ -4440,14 +4490,14 @@ async function pbShow(i,force){
   var pg; try{ pg=await pbPage(i) }catch(e){ msg.className='small err'; msg.textContent='这一页没有显示出来。'; return } if(PB!==b||b.i!==i) return;
   try{ pbKeepPos(); pbReset() }catch(e){} $('#pb-zoom').hidden=!pg.img;
   var im=$('#pb-img'); im.hidden=!pg.img; if(pg.img){ im.src=pg.img; pbReapplySoon() } $('#pb-none').hidden=!!pg.img; pbTxtPaint(); $('#pb-ocr').hidden=!(pg.blob||pg.img);
-  var need=force||(b.src!=='me'&&!pg.done&&String(pg.t||'').trim().length<3&&!!(pg.blob||pg.img));
+  var qwenReady=!!PBQ.key, need=force||(qwenReady&&b.src!=='me'&&!pg.done&&String(pg.t||'').trim().length<3&&!!(pg.blob||pg.img));
   pbApply(pbUnits(pg)); msg.textContent='';
   if(need){
     msg.textContent='正在认这一页上的文字…';
     try{ await pbOcr(i) }catch(e){ if(PB!==b||b.i!==i) return; var t=e&&e.msg; if(!t){ try{ t=aiFail(e) }catch(z){} } msg.className='small err'; msg.textContent=t||'这一页的文字没认出来，点「重新识别」再试一次。'; return }
     if(PB!==b||b.i!==i) return; pbApply(pbUnits(pg)); msg.textContent='';
   }
-  if(!L.units.length) msg.textContent=(b.src==='me'&&!pg.done&&b.kind!=='txt')?'这一页没有导入文字（想让 Claude 认，点「重新识别」）。':'这一页没有认出文字。';
+  if(!L.units.length) msg.textContent=(b.src==='me'&&!pg.done&&b.kind!=='txt')?'这一页没有导入文字（先填写千问 API Key，再点「重新识别」）。':(!qwenReady&&b.kind!=='txt'?'先在上方「千问识别」区域填写 API Key，再开始识别。':'这一页没有认出文字。');
   pbSave();
   if(b.kind==='pdf'&&i+1<b.pages.length&&!b.pages[i+1].img){ var nx=i+1; setTimeout(function(){ if(PB===b&&b.i===i) pbPage(nx).catch(function(){}) },600) }
 }
@@ -4597,7 +4647,7 @@ $('#pb-tfile').onchange=async function(){ var all=[].slice.call(this.files||[]);
 $('#pb-paste').addEventListener('input',function(){ pbTName=''; pbTDirty=true; $('#pb-tmsg').textContent=''; $('#pb-tst').textContent='' });
 /* tells the learner what text the cloud already keeps for this book, so an empty box doesn't look like the text was lost */
 function pbSavedNote(){ var el=$('#pb-saved'); if(!el) return; var m=(PB&&!PB.temp)?PB:(PBLOC||PBMETA), t=m&&m.texts||{}, k=Object.keys(t).filter(function(x){ return t[x]&&typeof t[x].t==='string' }).length, n=(PB&&PB.pages&&PB.pages.length)||(PBLOC&&+PBLOC.n)||(PBMETA&&+PBMETA.n)||0;
-  el.hidden=!k||!(PBLOC||PBMETA||(PB&&(PB.local||PB.cloud))); el.textContent=k?(PBMETA?'☁️ 这台设备和云端':'💾 这台设备')+'已保存 '+k+(n?' / '+n:'')+' 页文字（包括修正过的），继续阅读直接使用，不会再让 Claude 识别。':'' }
+  el.hidden=!k||!(PBLOC||PBMETA||(PB&&(PB.local||PB.cloud))); el.textContent=k?(PBMETA?'☁️ 这台设备和云端':'💾 这台设备')+'已保存 '+k+(n?' / '+n:'')+' 页文字（包括修正过的），继续阅读直接使用，不会再调用千问识别。':'' }
 function pbParseTxt(s){ var parts=String(s||'').replace(/\r/g,'').split(/^\s*=+\s*第\s*(\d+)\s*页\s*=+\s*$/m), out={}; for(var i=1;i<parts.length;i+=2){ var k=+parts[i]-1; if(k>=0) out[k]=String(parts[i+1]||'').trim() } return out }
 async function pbUseTxt(file){ var raw=''; try{ raw=await file.text() }catch(e){} return pbUseRaw(raw) }
 async function pbUseRaw(raw){
@@ -4612,7 +4662,7 @@ async function pbUseRaw(raw){
   else { var pk=pbKey();
     if(PBLOC){ try{ PBLOC.t=Date.now(); var lm2=PBLOC; await mTx('readwrite',function(st){ return st.put(lm2,pk+'_m') }) }catch(e){} if(PBMETA) PBMETA.texts=PBLOC.texts }
     if(PBMETA){ try{ var c=await mCloud(); if(c){ PBMETA.t=Date.now(); await mDoc(c,pk).set(PBMETA) } }catch(e){} } }
-  msg.className='small muted'; msg.textContent='已导入 '+used+' 页文字'+(PB&&ks.length>n?'（文字有 '+ks.length+' 页，绘本只有 '+n+' 页，多出的没用上）':'')+'，这些页不再用 Claude 识别。';
+  msg.className='small muted'; msg.textContent='已导入 '+used+' 页文字'+(PB&&ks.length>n?'（文字有 '+ks.length+' 页，绘本只有 '+n+' 页，多出的没用上）':'')+'，这些页不再调用千问识别。';
   setTimeout(function(){ if(msg.textContent.indexOf('已导入')===0){ msg.textContent=''; msg.className='small err' } },8000);
   return true;
 }
@@ -4767,7 +4817,7 @@ async function pbMultiTxt(files){ await shLoad(); var cur=shCur(), hit=[], miss=
 (function(){ var _o=pbOcr; pbOcr=function(i){ var b=PB; if(!b) return Promise.resolve(false); b.ocrq=b.ocrq||{}; if(b.ocrq[i]) return b.ocrq[i]; var p=_o(i); b.ocrq[i]=p; var clr=function(){ if(b.ocrq&&b.ocrq[i]===p) delete b.ocrq[i] }; p.then(clr,clr); return p } })();
 var PBK={run:0,stop:false};
 function pbNeedOcr(b,pg){ return b.src!=='me'&&b.kind!=='txt'&&!pg.done&&String(pg.t||'').trim().length<3&&!!(pg.blob||pg.img) }
-async function pbBulk(){ var b=PB; if(!b||b.src==='me'||b.kind==='txt'||!claudeSample) return; var lim=null; try{ lim=await claudeSample.limits() }catch(e){} if(!lim||!lim.images||PB!==b) return;
+async function pbBulk(){ var b=PB; if(!b||b.src==='me'||b.kind==='txt') return; if(!PBQ.key){ pbQwenStatus('先填写 API Key 并点「保存并开始识别」，再自动识别绘本。',true); return } if(PB!==b) return;
   var run=++PBK.run; PBK.stop=false; var n=b.pages.length, order=[]; for(var k=0;k<n;k++) order.push((b.i+k)%n);
   var box=$('#pb-bulk'), done=0, fail=[], total=0;
   /* count what is still to do: pages already saved are skipped */
@@ -4776,10 +4826,10 @@ async function pbBulk(){ var b=PB; if(!b||b.src==='me'||b.kind==='txt'||!claudeS
   total=todo.length; if(!total){ box.hidden=true; return } paint();
   var idx=0;
   async function worker(){ while(idx<todo.length){ if(PB!==b||run!==PBK.run) return; if(PBK.stop){ paint(); return } var i=todo[idx++], pg=b.pages[i]; if(b.kind==='pdf'&&!pg.img){ try{ pg=await pbPage(i) }catch(e){ done++; paint(); continue } if(PB!==b||run!==PBK.run) return }
-      if(pbNeedOcr(b,pg)){ var ok=false; for(var t=0;t<2&&!ok;t++){ try{ await pbOcr(i); ok=true }catch(e){ var c=e&&e.code; if(c==='not_granted') { PBK.stop=true; paint(); return } await new Promise(function(r){ setTimeout(r,c==='rate_limited'?6000:2000) }) } } if(!ok) fail.push(i) }
+      if(pbNeedOcr(b,pg)){ var ok=false; for(var t=0;t<2&&!ok;t++){ try{ await pbOcr(i); ok=true }catch(e){ var c=e&&e.code; if(c==='rate_limited'&&t===0){ await new Promise(function(r){ setTimeout(r,6000) }); continue } pbQwenStatus((e&&e.msg)||'千问识别失败，请检查设置后重试。',true); break } } if(!ok) fail.push(i) }
       done++; if(PB===b&&run===PBK.run) paint() } }
   await Promise.all([worker(),worker(),worker()]);
-  if(PB===b&&run===PBK.run){ paint(); try{ pbSave(); pbSavedNote() }catch(e){} }
+  if(PB===b&&run===PBK.run){ paint(); try{ pbSave(); pbSavedNote() }catch(e){} pbQwenStatus(fail.length?'识别结束：'+fail.length+' 页未识别，请检查接口状态后重试。':'绘本识别完成，已保存识别结果。',!!fail.length) }
 }
 $('#pb-bulk-stop').onclick=function(){ if(PBK.stop){ pbBulk() } else { PBK.stop=true; this.textContent='继续识别' } };
 /* ---------- 绘本：自动讲故事（读完一页自动翻页，可加讲解） ---------- */
