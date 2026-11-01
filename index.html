@@ -859,8 +859,8 @@ html.lfocus{--tabs-h:0px}
         <option value="en-US-GuyNeural">Guy（美音，男）</option><option value="en-GB-SoniaNeural">Sonia（英音，女）</option>
         <option value="en-GB-RyanNeural">Ryan（英音，男）</option></select></label>
     </div>
-    <h2>文章解析与绘本识别（大模型接口）</h2>
-    <p class="muted small">用来做逐句翻译、重点词汇、语法和绘本图片识别。支持 OpenAI 兼容接口，默认使用 DeepSeek Flash。绘本识别需要支持图片的模型；密钥只需在这里填写一次。</p>
+    <h2>文章解析（大模型接口）</h2>
+    <p class="muted small">用来做逐句翻译、重点词汇和语法。支持 OpenAI 兼容接口，默认使用 DeepSeek Flash。绘本图片由 PaddleOCR 在当前浏览器识别，无需填写密钥。</p>
     <div class="row">
       <label for="llm-base">接口地址 <input type="text" id="llm-base" size="26" spellcheck="false"></label>
       <label for="llm-model">模型 <input type="text" id="llm-model" size="14" spellcheck="false"></label>
@@ -1032,8 +1032,8 @@ html.lfocus{--tabs-h:0px}
             <div class="row lact"><label class="btn" for="pb-file" id="pb-file-btn">选择文件</label><input type="file" id="pb-file" class="vh" accept=".pdf,.pptx,.ppt,application/vnd.ms-powerpoint,.txt,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,image/*" multiple><button class="btn" id="pb-up" hidden title="传到云端后，iPad、iPhone 等其他设备也能打开">上传云端</button><span class="grow"></span><button class="btn quiet" id="pb-clear" hidden title="清掉这台设备和云端保存的绘本">清除</button></div>
           </div>
           <div class="lcard">
-            <div class="lhead"><span class="lnum">2</span><strong>每页的文字</strong><span class="grow"></span><div class="seg" role="group" aria-label="文字从哪里来"><button id="pb-src-ai" aria-pressed="true">AI 识别</button><button id="pb-src-me" aria-pressed="false">用我的文字</button></div></div>
-            <div id="pb-ai-box"><p class="muted small">使用「设置」里的 DeepSeek 接口、模型和密钥。选择「AI 识别」后，会自动识别绘本（同时识别 3 页，从当前页往后）；已识别的文字会保存，不重复调用。DeepSeek 请使用支持图片的 Flash 模型。</p><p id="pb-ai-status" class="small muted" role="status" aria-live="polite"></p></div>
+            <div class="lhead"><span class="lnum">2</span><strong>每页的文字</strong><span class="grow"></span><div class="seg" role="group" aria-label="文字从哪里来"><button id="pb-src-ai" aria-pressed="true">Paddle 识别</button><button id="pb-src-me" aria-pressed="false">用我的文字</button></div></div>
+            <div id="pb-ai-box"><p class="muted small">使用 PaddleOCR 在当前浏览器自动识别绘本文字，无需 API Key，识别图片不发送到云端模型。首次使用需下载识别模型，请保持网络连接；之后从当前页开始逐页识别，已识别的文字会保存。</p><p id="pb-ai-status" class="small muted" role="status" aria-live="polite"></p></div>
             <div id="pb-me-box" hidden>
               <p class="muted small">选终端认好的「.pages.txt」，或直接粘贴。用「=== 第 1 页 ===」分页，没有分页就算一页。可以一次选多个文字文件：文件名和书架里的绘本同名（如「斑马.pdf」对「斑马.pages.txt」或「斑马.txt」），就会自动放到那一本里。没有绘本也能只用文字学；只有绘本、不填文字，就在「随手记」里边看边记。</p>
               <textarea id="pb-paste" rows="5" spellcheck="false" aria-label="每页的文字" placeholder="=== 第 1 页 ===&#10;Pippi lands on Mars.&#10;=== 第 2 页 ===&#10;She sees a red wolf."></textarea>
@@ -1109,7 +1109,7 @@ html.lfocus{--tabs-h:0px}
       <div class="row" id="l-seekbar"><span class="ipa small" id="l-cur">0:00</span><input type="range" id="l-seek" class="grow" min="0" max="1000" step="1" value="0" aria-label="播放进度"><span class="ipa small" id="l-dur">0:00</span><button class="btn quiet" id="l-full" title="全屏播放">全屏</button></div>
       <div id="pb-view" hidden>
         <div class="pbframe"><div class="pbpage" id="pb-page"><img id="pb-img" alt="" hidden draggable="false"><p class="muted small" id="pb-none" hidden>这一页没有图片。</p></div></div>
-        <div class="row pbnav"><button class="btn" id="pb-pbook" hidden title="上一本绘本">« 上一本</button><button class="btn" id="pb-prev">‹ 上一页</button><strong class="small grow" id="pb-pos"></strong><button class="btn" id="pb-next">下一页 ›</button><button class="btn" id="pb-nbook" hidden title="下一本绘本">下一本 »</button><button class="btn primary" id="pb-auto" title="自动读完一页再翻下一页，连贯地讲完整本书">▶ 自动讲故事</button><select id="pb-ex" aria-label="讲解方式"><option value="0">只读原文</option><option value="1">读完加中文讲解</option><option value="2">先中文讲解再读原文</option></select><div class="pbzoom" id="pb-zoom" hidden><button id="pb-zo" aria-label="缩小" title="缩小画面">−</button><button id="pb-z1" title="还原大小">100%</button><button id="pb-zi" aria-label="放大" title="放大画面">+</button></div><button class="btn quiet" id="pb-full" title="全屏看这一页（按 Esc 退出）">全屏</button><button class="btn quiet" id="pb-ocr" title="让 Claude 重新认一遍这一页上的文字">重新识别</button></div>
+        <div class="row pbnav"><button class="btn" id="pb-pbook" hidden title="上一本绘本">« 上一本</button><button class="btn" id="pb-prev">‹ 上一页</button><strong class="small grow" id="pb-pos"></strong><button class="btn" id="pb-next">下一页 ›</button><button class="btn" id="pb-nbook" hidden title="下一本绘本">下一本 »</button><button class="btn primary" id="pb-auto" title="自动读完一页再翻下一页，连贯地讲完整本书">▶ 自动讲故事</button><select id="pb-ex" aria-label="讲解方式"><option value="0">只读原文</option><option value="1">读完加中文讲解</option><option value="2">先中文讲解再读原文</option></select><div class="pbzoom" id="pb-zoom" hidden><button id="pb-zo" aria-label="缩小" title="缩小画面">−</button><button id="pb-z1" title="还原大小">100%</button><button id="pb-zi" aria-label="放大" title="放大画面">+</button></div><button class="btn quiet" id="pb-full" title="全屏看这一页（按 Esc 退出）">全屏</button><button class="btn quiet" id="pb-ocr" title="用 PaddleOCR 重新识别这一页上的文字">重新识别</button></div>
         <p class="small muted" id="pb-msg"></p>
         <div class="row small" id="pb-bulk" hidden><span class="grow" id="pb-bulk-t"></span><div class="gb" style="flex:1;min-width:120px;height:8px;border-radius:99px;background:var(--sunk);overflow:hidden"><i id="pb-bulk-bar" style="display:block;height:100%;width:0;background:var(--accent,#6d3bd1)"></i></div><button class="btn quiet" id="pb-bulk-stop">暂停识别</button></div>
         <p class="pbex" id="pb-extxt" hidden></p>
@@ -1845,7 +1845,6 @@ function setSave(){
   var ok=true; try{LS.setItem('typing-desk-keys',JSON.stringify(CFG))}catch(e){ok=false}
   ttsCache={}; azNote(''); pickAI(); spInit(); if(synth) loadVoices();
   $('#set-msg').textContent=ok?'已保存。':'已启用，但这个浏览器不让保存，下次打开要重新填。';
-  pbAiSettingsSaved();
 }
 $('#btn-set').hidden=HOSTED;
 $('#btn-set').onclick=function(){ if($('#settings').hidden) setOpen(); else $('#settings').hidden=true };
@@ -3643,7 +3642,7 @@ function ttsCmd(){
   else { var bk=ttsBook(), bn=ttsName(bk.name); if(bk.pages.length){ if(split==='all'){ items.push([bn+'.mp3',bk.pages.map(function(p){return p[1]}).join('\n\n')]); info='绘本 · '+bk.pages.length+' 页有文字 → 「朗读音频/'+bn+'.mp3」' } else { var w=String(Math.max.apply(null,bk.pages.map(function(p){return p[0]+1}))).length; bk.pages.forEach(function(p){ var n=String(p[0]+1); while(n.length<Math.max(2,w)) n='0'+n; items.push([bn+'/第'+n+'页.mp3',p[1]]) }); info='绘本 · '+bk.pages.length+' 页有文字 → 「朗读音频/'+bn+'/」里每页一个 mp3' } } }
   $('#tts-info').textContent=items.length?info:'生成语音';
   var pre=$('#c-tts'); pre.parentNode.classList.toggle('wait',!items.length);
-  if(!items.length){ pre.textContent='（先准备好内容）'; $('#tts-tip').textContent=src==='article'?'「朗读」页里还没有文章。':src==='subs'?'字幕框是空的：先在上面「字幕」里粘贴或选字幕文件。':'还没有每页的文字：先在「绘本阅读」里导入文字，或用AI 识别过的绘本。'; return }
+  if(!items.length){ pre.textContent='（先准备好内容）'; $('#tts-tip').textContent=src==='article'?'「朗读」页里还没有文章。':src==='subs'?'字幕框是空的：先在上面「字幕」里粘贴或选字幕文件。':'还没有每页的文字：先在「绘本阅读」里导入文字，或用 Paddle 识别过的绘本。'; return }
   var data={dir:base,voice:$('#tts-voice').value,rate:$('#tts-rate').value,items:items}, b64=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
   var py=['import asyncio,base64,json,os,subprocess','import edge_tts','d=json.loads(base64.b64decode("'+b64+'").decode("utf-8"))','root=os.path.expanduser(d["dir"])',
     'async def main():','    n=len(d["items"])','    for i,(name,text) in enumerate(d["items"]):','        p=os.path.join(root,name); os.makedirs(os.path.dirname(p),exist_ok=True)',
@@ -4421,21 +4420,11 @@ async function pbPage(i){
   var saved=b.texts[i]; if(saved&&typeof saved.t==='string'){ pg.t=saved.t; pg.o=saved.o?1:0; pg.done=1 }
   return pg;
 }
-function pbAiEndpoint(raw){
-  var u; try{ u=new URL(String(raw||'').trim()) }catch(e){ throw {code:'endpoint',msg:'请在「设置」里填写正确的大模型接口地址。'} }
-  if(u.protocol!=='https:') throw {code:'endpoint',msg:'请在「设置」里填写以 https:// 开头的接口地址。'};
-  var path=u.pathname.replace(/\/+$/,'');
-  if(!/\/chat\/completions$/.test(path)) path+='/chat/completions';
-  u.pathname=path;
-  return u.toString();
-}
-function pbAiConfig(){
-  var key=String(CFG.llmKey||'').trim(),model=String(CFG.llmModel||'').trim();
-  if(!key) throw {code:'missing_key',msg:'请先在右上角「设置」里填写 DeepSeek 密钥并保存，再选择「AI 识别」。'};
-  var endpoint=pbAiEndpoint(CFG.llmBase),host=new URL(endpoint).hostname;
-  if(!model) throw {code:'model',msg:'请在「设置」里填写支持图片的模型，例如 deepseek-flash。'};
-  if(host==='api.deepseek.com'&&!/^(deepseek-flash|deepseek-v4-flash)$/i.test(model)) throw {code:'model',msg:'当前 DeepSeek 模型不支持绘本图片，请在「设置」里把模型改为 deepseek-flash 并保存。'};
-  return {key:key,model:model,endpoint:endpoint};
+// PaddleOCR 组件按需加载；加载失败后允许重新尝试。
+var PBPADDLE=null;
+function pbPaddle(){
+  if(!PBPADDLE) PBPADDLE=import('./assets/paddle-ocr.mjs').catch(function(e){ PBPADDLE=null; throw {code:'paddle_load',msg:'PaddleOCR 组件没有加载出来，请检查网络后点「重新识别」重试。'} });
+  return PBPADDLE;
 }
 var PBAI={gen:0,controllers:[]};
 function pbAiCancel(){
@@ -4446,10 +4435,8 @@ function pbAiStatus(text,isErr){
   var el=$('#pb-ai-status'); if(!el) return;
   el.className=isErr?'small err':'small muted'; el.textContent=text||'';
 }
-function pbAiReady(){ try{ pbAiConfig(); return true }catch(e){ return false } }
 function pbAiAuto(){
   var b=PB; if(!b||b.src!=='ai'||b.kind==='txt'||PBPEND!=null) return;
-  try{ pbAiConfig() }catch(e){ pbAiStatus(e.msg,true); return }
   if(L.pb&&!$('#l-work').hidden&&!$('#pb-view').hidden) pbShow(b.i);
   pbBulk();
 }
@@ -4458,49 +4445,32 @@ function pbAiPrepared(b){
   b.src=PBSRC;
   if(b.src==='ai') pbAiAuto();
 }
-function pbAiSettingsSaved(){
-  pbAiCancel();
-  if(PB&&!PB.src) PB.src=PBSRC;
-  if(PB&&PB.src==='ai'&&PB.kind!=='txt') pbAiAuto();
-}
-function pbBlobDataUrl(blob){
-  return new Promise(function(resolve,reject){
-    var r=new FileReader(); r.onload=function(){ resolve(String(r.result||'')) }; r.onerror=function(){ reject(new Error('无法读取页面图片')) }; r.readAsDataURL(blob);
-  });
-}
 async function pbOcr(i){
-  var b=PB,pg=b&&b.pages[i],gen=PBAI.gen,src=b&&b.src; if(!pg) return false;
-  function current(){ return PB===b&&gen===PBAI.gen&&b.src===src }
+  var b=PB,pg=b&&b.pages[i],gen=PBAI.gen,src=b&&b.src,lang=LANG; if(!pg) return false;
+  function current(){ return PB===b&&gen===PBAI.gen&&b.src===src&&LANG===lang }
   function stale(){ if(!current()) throw {code:'cancelled',msg:'本次识别已取消。'} }
-  var config=pbAiConfig();
-  if(!pg.blob&&pg.img){ try{ var rr=await fetch(pg.img); if(rr.ok) pg.blob=await rr.blob() }catch(e){} }
-  stale();
-  if(!pg.blob) throw {code:'image',msg:'这一页的图片没有取到，请检查网络后点「重新识别」。'};
-  var jpg=await pShrink(pg.blob,1500,0.86),dataUrl=await pbBlobDataUrl(jpg); stale();
-  var prompt='请准确识别这张绘本页面上用于学习的'+LN()+'文字，按自然阅读顺序逐行输出；每句或短标题单独一行。只抄录，不改写、不翻译；忽略页码、Logo、水印和其他语言文字。页面没有'+LN()+'文字时只返回 __NO_TEXT__。';
-  var response,payload=null,controller=new AbortController(),timer=setTimeout(function(){controller.abort()},90000);
-  PBAI.controllers.push(controller);
+  var controller=new AbortController(); PBAI.controllers.push(controller);
+  function status(text){
+    if(!current()) return;
+    pbAiStatus(text);
+    if(b.i===i&&!$('#pb-view').hidden) $('#pb-msg').textContent=text;
+  }
   try{
-    response=await fetch(config.endpoint,{method:'POST',headers:{'Authorization':'Bearer '+config.key,'Content-Type':'application/json'},body:JSON.stringify({model:config.model,stream:false,messages:[{role:'user',content:[{type:'image_url',image_url:{url:dataUrl}},{type:'text',text:prompt}]}]}),signal:controller.signal});
-    try{ payload=await response.json() }catch(e){ if(e&&e.name==='AbortError') throw e }
+    if(!pg.blob&&pg.img){ var rr=await fetch(pg.img,{signal:controller.signal}); if(rr.ok) pg.blob=await rr.blob() }
+    stale();
+    if(!pg.blob) throw {code:'image',msg:'这一页的图片没有取到，请检查网络后点「重新识别」。'};
+    status('正在准备 PaddleOCR，首次使用需下载识别模型…');
+    var paddle=await pbPaddle(); stale();
+    var result=await paddle.recognize(pg.blob,{lang:lang,signal:controller.signal,onStatus:status}); stale();
+    if(!result||typeof result.text!=='string') throw {code:'paddle_result',msg:'PaddleOCR 返回的结果无效，请点「重新识别」重试。'};
+    // 成功的空白页也保存；程序出错时不会把失败写成无文字。
+    pg.t=result.text.trim(); pg.o=1; pg.done=1; b.texts[i]={t:pg.t,o:1}; pbSave(); return true;
   }catch(e){
     stale();
-    if(e&&e.name==='AbortError') throw {code:'timeout',msg:'AI 识别等待超过 90 秒，已停止本次请求；请检查网络和「设置」里的接口地址后重试。'};
-    throw {code:'network',msg:'AI 接口连接失败，请检查网络和「设置」里的接口地址后重试。'};
-  }finally{ clearTimeout(timer); var ci=PBAI.controllers.indexOf(controller); if(ci>=0) PBAI.controllers.splice(ci,1) }
-  stale();
-  if(!response.ok){
-    var detail=payload&&payload.error&&(payload.error.message||payload.error.code)||payload&&payload.message||'';
-    var code=response.status===429?'rate_limited':(response.status===401||response.status===403?'auth':'http_'+response.status);
-    var msg=response.status===401||response.status===403?'AI 密钥无效或没有模型权限，请检查「设置」里的密钥和模型。':response.status===429?'AI 调用频率或额度受限，请稍后重试。':response.status===402?'AI 账户余额不足，请充值后重试。':'AI 接口返回错误（HTTP '+response.status+'）';
-    if(detail) msg+='：'+String(detail).slice(0,300);
-    throw {code:code,msg:msg};
-  }
-  var choice=payload&&payload.choices&&payload.choices[0],content=choice&&choice.message&&choice.message.content;
-  if(Array.isArray(content)) content=content.map(function(x){ return typeof x==='string'?x:(x&&x.text)||'' }).join('');
-  if(typeof content!=='string'||!content.trim()) throw {code:'empty_response',msg:'AI 没有返回识别文字，请在「设置」里确认模型支持图片后重试。'};
-  if(choice.finish_reason==='length') throw {code:'incomplete_response',msg:'这一页文字过多，AI 返回内容不完整；请重试或把页面拆成较小图片。'};
-  pg.t=content.trim()==='__NO_TEXT__'?'':content.trim(); pg.o=1; pg.done=1; b.texts[i]={t:pg.t,o:1}; pbSave(); return true;
+    if(e&&e.msg) throw e;
+    if(e&&e.name==='AbortError') throw {code:'cancelled',msg:'本次识别已取消，请重新选择「Paddle 识别」继续。'};
+    throw {code:'paddle_error',msg:'PaddleOCR 识别失败，请检查网络后点「重新识别」重试。'};
+  }finally{ var ci=PBAI.controllers.indexOf(controller); if(ci>=0) PBAI.controllers.splice(ci,1) }
 }
 function pbApply(units){
   if(L.units&&L.units.length) PB.mode=L.follow?3:(L.subs?2:(L.notes?1:0));
@@ -4513,14 +4483,14 @@ async function pbShow(i,force){
   var pg; try{ pg=await pbPage(i) }catch(e){ msg.className='small err'; msg.textContent='这一页没有显示出来。'; return } if(PB!==b||b.i!==i) return;
   try{ pbKeepPos(); pbReset() }catch(e){} $('#pb-zoom').hidden=!pg.img;
   var im=$('#pb-img'); im.hidden=!pg.img; if(pg.img){ im.src=pg.img; pbReapplySoon() } $('#pb-none').hidden=!!pg.img; pbTxtPaint(); $('#pb-ocr').hidden=!(pg.blob||pg.img);
-  var aiReady=pbAiReady(), gen=PBAI.gen, source=b.src, need=force||(aiReady&&b.src!=='me'&&!pg.done&&String(pg.t||'').trim().length<3&&!!(pg.blob||pg.img));
+  var gen=PBAI.gen, source=b.src, need=force||(b.src!=='me'&&!pg.done&&String(pg.t||'').trim().length<3&&!!(pg.blob||pg.img));
   pbApply(pbUnits(pg)); msg.textContent='';
   if(need){
     msg.textContent='正在认这一页上的文字…';
     try{ await pbOcr(i) }catch(e){ if(PB!==b||b.i!==i||gen!==PBAI.gen||source!==b.src) return; var t=e&&e.msg; if(!t){ try{ t=aiFail(e) }catch(z){} } msg.className='small err'; msg.textContent=t||'这一页的文字没认出来，点「重新识别」再试一次。'; return }
     if(PB!==b||b.i!==i||gen!==PBAI.gen||source!==b.src) return; pbApply(pbUnits(pg)); msg.textContent='';
   }
-  if(!L.units.length) msg.textContent=(b.src==='me'&&!pg.done&&b.kind!=='txt')?'这一页没有导入文字，可以选择「AI 识别」。':(!aiReady&&b.kind!=='txt'?'请先在右上角「设置」里保存支持图片的大模型接口、模型和密钥。':'这一页没有认出文字。');
+  if(!L.units.length) msg.textContent=(b.src==='me'&&!pg.done&&b.kind!=='txt')?'这一页没有导入文字，可以选择「Paddle 识别」。':'这一页没有识别到文字。';
   pbSave();
   if(b.kind==='pdf'&&i+1<b.pages.length&&!b.pages[i+1].img){ var nx=i+1; setTimeout(function(){ if(PB===b&&b.i===i) pbPage(nx).catch(function(){}) },600) }
 }
@@ -4607,6 +4577,7 @@ async function pbUpload(file,name){
   }catch(e){ for(var j=0;j<ids.length;j++){ try{ await c.as.delete(ids[j]) }catch(x){} } if(PB===b&&pbKey()===key) pbUi(name,b.pages.length+' 页 · 云端保存没成功，只在这次打开时可用') }
 }
 async function pbRestore(){
+  pbAiCancel();
   var tok=++pbTok, key=pbKey(); PB=null; PBMETA=null; PBLOC=null; PBOTHER=null; pbUi('',''); $('#pb-saved').hidden=true; try{ $('#pb-file').value='' }catch(e){}
   var loc=null; try{ loc=await mTx('readonly',function(st){ return st.get(key+'_m') }) }catch(e){} if(tok!==pbTok||pbKey()!==key||PB) return;
   if(loc&&loc.name&&(loc.has||loc.kind==='txt')){ PBLOC=loc; if(loc.src==='me'||loc.src==='ai') pbSrc(loc.src,true); pbSavedNote(); pbUi(loc.name,(loc.n?loc.n+' 页 · ':'')+'已保存在这台设备') } else loc=null;
@@ -4678,7 +4649,7 @@ $('#pb-tfile').onchange=async function(){ var all=[].slice.call(this.files||[]);
 $('#pb-paste').addEventListener('input',function(){ pbTName=''; pbTDirty=true; $('#pb-tmsg').textContent=''; $('#pb-tst').textContent='' });
 /* tells the learner what text the cloud already keeps for this book, so an empty box doesn't look like the text was lost */
 function pbSavedNote(){ var el=$('#pb-saved'); if(!el) return; var m=(PB&&!PB.temp)?PB:(PBLOC||PBMETA), t=m&&m.texts||{}, k=Object.keys(t).filter(function(x){ return t[x]&&typeof t[x].t==='string' }).length, n=(PB&&PB.pages&&PB.pages.length)||(PBLOC&&+PBLOC.n)||(PBMETA&&+PBMETA.n)||0;
-  el.hidden=!k||!(PBLOC||PBMETA||(PB&&(PB.local||PB.cloud))); el.textContent=k?(PBMETA?'☁️ 这台设备和云端':'💾 这台设备')+'已保存 '+k+(n?' / '+n:'')+' 页文字（包括修正过的），继续阅读直接使用，不会再调用AI 识别。':'' }
+  el.hidden=!k||!(PBLOC||PBMETA||(PB&&(PB.local||PB.cloud))); el.textContent=k?(PBMETA?'☁️ 这台设备和云端':'💾 这台设备')+'已保存 '+k+(n?' / '+n:'')+' 页文字（包括修正过的），继续阅读直接使用，不会再重复识别。':'' }
 function pbParseTxt(s){ var parts=String(s||'').replace(/\r/g,'').split(/^\s*=+\s*第\s*(\d+)\s*页\s*=+\s*$/m), out={}; for(var i=1;i<parts.length;i+=2){ var k=+parts[i]-1; if(k>=0) out[k]=String(parts[i+1]||'').trim() } return out }
 async function pbUseTxt(file){ var raw=''; try{ raw=await file.text() }catch(e){} return pbUseRaw(raw) }
 async function pbUseRaw(raw){
@@ -4693,7 +4664,7 @@ async function pbUseRaw(raw){
   else { var pk=pbKey();
     if(PBLOC){ try{ PBLOC.t=Date.now(); var lm2=PBLOC; await mTx('readwrite',function(st){ return st.put(lm2,pk+'_m') }) }catch(e){} if(PBMETA) PBMETA.texts=PBLOC.texts }
     if(PBMETA){ try{ var c=await mCloud(); if(c){ PBMETA.t=Date.now(); await mDoc(c,pk).set(PBMETA) } }catch(e){} } }
-  msg.className='small muted'; msg.textContent='已导入 '+used+' 页文字'+(PB&&ks.length>n?'（文字有 '+ks.length+' 页，绘本只有 '+n+' 页，多出的没用上）':'')+'，这些页不再调用AI 识别。';
+  msg.className='small muted'; msg.textContent='已导入 '+used+' 页文字'+(PB&&ks.length>n?'（文字有 '+ks.length+' 页，绘本只有 '+n+' 页，多出的没用上）':'')+'，这些页不再重复识别。';
   setTimeout(function(){ if(msg.textContent.indexOf('已导入')===0){ msg.textContent=''; msg.className='small err' } },8000);
   return true;
 }
@@ -4850,7 +4821,6 @@ var PBK={run:0,stop:false,active:false,book:null};
 function pbNeedOcr(b,pg){ return b.src==='ai'&&b.kind!=='txt'&&!pg.done&&String(pg.t||'').trim().length<3&&!!(pg.blob||pg.img) }
 async function pbBulk(){
   var b=PB; if(!b||b.src!=='ai'||b.kind==='txt') return;
-  try{ pbAiConfig() }catch(e){ pbAiStatus(e.msg,true); return }
   if(PBK.active&&PBK.book===b&&!PBK.stop) return;
   var run=++PBK.run; PBK.stop=false; PBK.active=true; PBK.book=b;
   var n=b.pages.length,order=[]; for(var k=0;k<n;k++) order.push((b.i+k)%n);
@@ -4871,7 +4841,7 @@ async function pbBulk(){
       if(pbNeedOcr(b,pg)) todo.push(i);
     }
     total=todo.length; if(!total){ box.hidden=true; pbAiStatus('绘本文字已准备好，已识别页面不会重复调用。'); return }
-    pbAiStatus('正在使用「设置」里的接口自动识别绘本…'); paint(); var idx=0;
+    pbAiStatus('正在使用 PaddleOCR 逐页识别绘本…'); paint(); var idx=0;
     async function worker(){
       while(idx<todo.length){
         if(!current()) return; if(PBK.stop){ paint(); return }
@@ -4881,25 +4851,20 @@ async function pbBulk(){
           if(!current()) return; if(PBK.stop){ paint(); return }
         }
         if(pbNeedOcr(b,pg)){
-          var ok=false;
-          for(var t=0;t<2&&!ok;t++){
-            if(!current()||PBK.stop) return;
-            try{ ok=await pbOcr(i) }catch(e){
-              if(!current()||e&&e.code==='cancelled') return;
-              var c=e&&e.code;
-              if(c==='rate_limited'&&t===0){ await new Promise(function(r){ setTimeout(r,6000) }); continue }
-              pbAiStatus((e&&e.msg)||'AI 识别失败，请检查「设置」后重试。',true); break;
-            }
+          try{ await pbOcr(i) }catch(e){
+            if(!current()||e&&e.code==='cancelled') return;
+            // 组件或模型失败时暂停，避免整本书逐页重复下载失败的资源。
+            fail.push(i); PBK.stop=true; paint();
+            pbAiStatus((e&&e.msg)||'PaddleOCR 识别失败，请检查网络后点「继续识别」重试。',true); return;
           }
-          if(!ok) fail.push(i);
         }
         done++; paint();
       }
     }
-    await Promise.all([worker(),worker(),worker()]);
+    await worker();
     if(current()){
       paint(); try{ pbSave(); pbSavedNote() }catch(e){}
-      if(!PBK.stop) pbAiStatus(fail.length?'识别结束：'+fail.length+' 页未识别，请检查「设置」和接口状态后重试。':'绘本识别完成，已保存识别结果。',!!fail.length);
+      if(!PBK.stop) pbAiStatus(fail.length?'识别结束：'+fail.length+' 页未识别，请翻到那页点「重新识别」重试。':'绘本识别完成，已保存识别结果。',!!fail.length);
     }
   }finally{ if(run===PBK.run){ PBK.active=false; PBK.book=null } }
 }
@@ -5639,4 +5604,5 @@ clInit();
 </script>
 
 </body></html>
+
 
