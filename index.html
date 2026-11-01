@@ -4465,7 +4465,7 @@ async function pbOcr(i){
   var response,payload=null,controller=new AbortController(),timer=setTimeout(function(){controller.abort()},90000);
   try{
     response=await fetch(endpoint,{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen3-vl-plus',stream:false,messages:[{role:'user',content:[{type:'image_url',image_url:{url:dataUrl}},{type:'text',text:prompt}]}]}),signal:controller.signal});
-    try{ payload=await response.json() }catch(e){}
+    try{ payload=await response.json() }catch(e){ if(e&&e.name==='AbortError') throw e }
   }catch(e){
     if(e&&e.name==='AbortError') throw {code:'timeout',msg:'千问识别等待超过 90 秒，已停止本次请求；请检查网络、接口地址和代理后重试。'};
     throw {code:'network',msg:'千问接口连接失败：请检查网络和接口地址；如果浏览器提示跨域，请填写支持跨域的 API 代理地址。'};
