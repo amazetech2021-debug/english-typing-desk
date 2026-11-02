@@ -1111,7 +1111,7 @@ html.lfocus{--tabs-h:0px}
         <div class="pbframe"><div class="pbpage" id="pb-page"><img id="pb-img" alt="" hidden draggable="false"><p class="muted small" id="pb-none" hidden>这一页没有图片。</p></div></div>
         <div class="row pbnav"><button class="btn" id="pb-pbook" hidden title="上一本绘本">« 上一本</button><button class="btn" id="pb-prev">‹ 上一页</button><strong class="small grow" id="pb-pos"></strong><button class="btn" id="pb-next">下一页 ›</button><button class="btn" id="pb-nbook" hidden title="下一本绘本">下一本 »</button><button class="btn primary" id="pb-auto" title="自动读完一页再翻下一页，连贯地讲完整本书">▶ 自动讲故事</button><select id="pb-ex" aria-label="讲解方式"><option value="0">只读原文</option><option value="1">读完加中文讲解</option><option value="2">先中文讲解再读原文</option></select><div class="pbzoom" id="pb-zoom" hidden><button id="pb-zo" aria-label="缩小" title="缩小画面">−</button><button id="pb-z1" title="还原大小">100%</button><button id="pb-zi" aria-label="放大" title="放大画面">+</button></div><button class="btn quiet" id="pb-full" title="全屏看这一页（按 Esc 退出）">全屏</button><button class="btn quiet" id="pb-ocr" title="用 PaddleOCR 重新识别这一页上的文字">重新识别</button></div>
         <p class="small muted" id="pb-msg"></p>
-        <div class="row small" id="pb-bulk" hidden><span class="grow" id="pb-bulk-t"></span><div class="gb" style="flex:1;min-width:120px;height:8px;border-radius:99px;background:var(--sunk);overflow:hidden"><i id="pb-bulk-bar" style="display:block;height:100%;width:0;background:var(--accent,#6d3bd1)"></i></div><button class="btn quiet" id="pb-bulk-stop">暂停识别</button></div>
+        <div class="row small" id="pb-bulk" hidden><span class="grow" id="pb-bulk-t"></span><div class="gb" style="flex:1;min-width:120px;height:8px;border-radius:99px;background:var(--sunk);overflow:hidden"><i id="pb-bulk-bar" style="display:block;height:100%;width:0;background:var(--accent,#6d3bd1)"></i></div><button class="btn quiet" id="pb-bulk-stop">暂停识别</button><button class="btn quiet" id="pb-bulk-empty" hidden>重试未检出文字页</button></div>
         <p class="pbex" id="pb-extxt" hidden></p>
       </div>
       <div class="row lrow" id="l-ctl">
@@ -3093,7 +3093,7 @@ $('#v-esave').onclick=function(){
   try{
     if(!PB){ vFixMsg('没有打开绘本。',true); return } var i=PB.i, pg=PB.pages[i]; if(!pg){ vFixMsg('这一页还没打开好，请稍等再保存。',true); return }
     var lines=[].map.call($('#v-erows').querySelectorAll('textarea'),function(t){ return t.value.replace(/\s+/g,' ').trim() }).filter(Boolean);
-    var t=lines.join('\n'); PB.texts[i]={t:t,o:1}; pg.t=t; pg.o=1; pg.done=1;
+    var t=lines.join('\n'); PB.texts[i]={t:t,o:1,source:'manual'}; pg.t=t; pg.o=1; pg.done=1;
     pbApply(pbUnits(pg)); pbSave(); try{ pbTxtPaint() }catch(e){}
     vFixMsg(lines.length?'✓ 第 '+(i+1)+' 页已保存（'+lines.length+' 句）。':'✓ 第 '+(i+1)+' 页的文字已清空。');
   }catch(e){ vFixMsg('没有保存成功：'+((e&&e.message)||e),true) }
@@ -4409,6 +4409,32 @@ async function pbOpen(file,name,meta){
   if(tok!==pbTok) return null; if(!b.pages.length) throw {msg:'这个文件里没有读到页面。'};
   if(b.i>=b.pages.length) b.i=0; PB=b; return b;
 }
+// 旧版的空字符串不代表 Paddle 已识别；保留非空文字与人工修订。
+function pbSavedDone(saved){ return !!(saved&&typeof saved.t==='string'&&(saved.t.trim()||saved.engine==='paddle-v1'||saved.source==='manual')) }
+function pbUseSaved(b,pg,i){
+  var saved=b.texts[i];
+  if(pbSavedDone(saved)){ pg.t=saved.t; pg.o=saved.o?1:0; pg.done=1 }
+  else if(saved&&typeof saved.t==='string'&&!saved.t.trim()){ pg.done=0 }
+}
+function pbTextStats(b){
+  var counts={text:0,blank:0,language:0,pending:0,retry:0};
+  b.pages.forEach(function(pg,i){
+    var saved=b.texts[i], value=pbSavedDone(saved)?saved:pg, raw=String(value.t||'').trim();
+    if(raw){ if(pbUnits(value).length) counts.text++; else counts.language++ }
+    else if(pbSavedDone(saved)||pg.done) counts.blank++;
+    else counts.pending++;
+    if(!raw&&(!saved||saved.source!=='manual')) counts.retry++;
+  });
+  return counts;
+}
+function pbTextSummary(b,fail){
+  var c=pbTextStats(b), t='共 '+b.pages.length+' 页：'+c.text+' 页有当前语言文字，'+c.blank+' 页未检出文字';
+  if(c.language) t+='，'+c.language+' 页文字不匹配当前学习语言';
+  if(fail&&fail.length) t+='，'+fail.length+' 页处理失败';
+  if(c.pending>(fail&&fail.length||0)) t+='，'+(c.pending-(fail&&fail.length||0))+' 页待处理';
+  var retry=$('#pb-bulk-empty'); if(retry) retry.hidden=!c.retry||b.src!=='ai';
+  return t+'。';
+}
 async function pbPage(i){
   var b=PB, pg=b.pages[i]; if(!pg) return null;
   if(b.kind==='pdf'&&!pg.img){
@@ -4417,7 +4443,7 @@ async function pbPage(i){
     pg.blob=await new Promise(function(r){ c.toBlob(r,'image/jpeg',0.86) }); pg.img=pg.blob?URL.createObjectURL(pg.blob):'';
     if(pg.t==null){ try{ var tc=await page.getTextContent(), str=''; tc.items.forEach(function(it){ if(typeof it.str==='string') str+=it.str+(it.hasEOL?'\n':'') }); pg.t=str.trim(); pg.o=0 }catch(e){ pg.t='' } }
   }
-  var saved=b.texts[i]; if(saved&&typeof saved.t==='string'){ pg.t=saved.t; pg.o=saved.o?1:0; pg.done=1 }
+  pbUseSaved(b,pg,i);
   return pg;
 }
 // PaddleOCR 组件按需加载；加载失败后允许重新尝试。
@@ -4447,6 +4473,7 @@ function pbAiPrepared(b){
 }
 async function pbOcr(i){
   var b=PB,pg=b&&b.pages[i],gen=PBAI.gen,src=b&&b.src,lang=LANG; if(!pg) return false;
+  var savedBefore=b.texts[i];
   function current(){ return PB===b&&gen===PBAI.gen&&b.src===src&&LANG===lang }
   function stale(){ if(!current()) throw {code:'cancelled',msg:'本次识别已取消。'} }
   var controller=new AbortController(); PBAI.controllers.push(controller);
@@ -4463,8 +4490,10 @@ async function pbOcr(i){
     var paddle=await pbPaddle(); stale();
     var result=await paddle.recognize(pg.blob,{lang:lang,signal:controller.signal,onStatus:status}); stale();
     if(!result||typeof result.text!=='string') throw {code:'paddle_result',msg:'PaddleOCR 返回的结果无效，请点「重新识别」重试。'};
+    // 等待识别期间的新人工修订优先；主动重新识别原有人工文字仍可生效。
+    if(b.texts[i]!==savedBefore&&b.texts[i]&&b.texts[i].source==='manual'){ pbUseSaved(b,pg,i); return true }
     // 成功的空白页也保存；程序出错时不会把失败写成无文字。
-    pg.t=result.text.trim(); pg.o=1; pg.done=1; b.texts[i]={t:pg.t,o:1}; pbSave(); return true;
+    pg.t=result.text.trim(); pg.o=1; pg.done=1; b.texts[i]={t:pg.t,o:1,engine:'paddle-v1',blank:!pg.t}; pbSave(); return true;
   }catch(e){
     stale();
     if(e&&e.msg) throw e;
@@ -4490,8 +4519,9 @@ async function pbShow(i,force){
     try{ await pbOcr(i) }catch(e){ if(PB!==b||b.i!==i||gen!==PBAI.gen||source!==b.src) return; var t=e&&e.msg; if(!t){ try{ t=aiFail(e) }catch(z){} } msg.className='small err'; msg.textContent=t||'这一页的文字没认出来，点「重新识别」再试一次。'; return }
     if(PB!==b||b.i!==i||gen!==PBAI.gen||source!==b.src) return; pbApply(pbUnits(pg)); msg.textContent='';
   }
-  if(!L.units.length) msg.textContent=(b.src==='me'&&!pg.done&&b.kind!=='txt')?'这一页没有导入文字，可以选择「Paddle 识别」。':'这一页没有识别到文字。';
+  if(!L.units.length) msg.textContent=(b.src==='me'&&!pg.done&&b.kind!=='txt')?'这一页没有导入文字，可以选择「Paddle 识别」。':(String(pg.t||'').trim()?'已识别到文字，但没有当前学习语言（'+LN()+'）的句子。请检查顶部的学习语言，原始文字已保留。':'这一页未检出文字。若图片中有字，请点「重新识别」；也可重试全部未检出文字页。');
   pbSave();
+  if(PBK&&!PBK.active&&!$('#pb-bulk').hidden) $('#pb-bulk-t').textContent=pbTextSummary(b,[]);
   if(b.kind==='pdf'&&i+1<b.pages.length&&!b.pages[i+1].img){ var nx=i+1; setTimeout(function(){ if(PB===b&&b.i===i) pbPage(nx).catch(function(){}) },600) }
 }
 /* zoom the page picture in place: the frame keeps its size, the picture grows inside it and can be dragged or scrolled */
@@ -4623,7 +4653,7 @@ function pbFromTexts(name,texts,n,page){
 }
 async function pbUseTextOnly(raw,name){
   var map=pbParseTxt(raw); if(!Object.keys(map).length){ var t=String(raw||'').trim(); if(!t) return false; map={0:t} }
-  var oo=/^#\s*已修正/m.test(String(raw||''))?1:0, texts={}; Object.keys(map).forEach(function(k){ texts[k]={t:map[k],o:oo} });
+  var oo=/^#\s*已修正/m.test(String(raw||''))?1:0, texts={}; Object.keys(map).forEach(function(k){ texts[k]={t:map[k],o:oo,source:'manual'} });
   var tok=++pbTok, key=pbKey(), b=pbFromTexts(name,texts,0,0); PB=b; PBMETA=null; var n=b.pages.length;
   b.size=0; pbLocNew(b,null); pbUi(name,n+' 页 · 只有文字'); pbStart();
   var c=await mCloud(); if(tok!==pbTok||pbKey()!==key||PB!==b) return true;
@@ -4648,8 +4678,13 @@ function pbTxtFill(t,name){ $('#pb-paste').value=t; pbTName=name||''; pbTDirty=t
 $('#pb-tfile').onchange=async function(){ var all=[].slice.call(this.files||[]); if(all.length>1||(all.length===1&&await pbTxtShelfHit(all[0]))){ this.value=''; await pbMultiTxt(all); return } var f=all[0]; this.value=''; if(!f) return; try{ pbTxtFill(await f.text(),(f.name||'文字').replace(/(\.(pdf|pptx|ppt))?(\.pages)?\.txt$/i,'')) }catch(e){ $('#pb-tst').textContent='这个文件读不了。' } };
 $('#pb-paste').addEventListener('input',function(){ pbTName=''; pbTDirty=true; $('#pb-tmsg').textContent=''; $('#pb-tst').textContent='' });
 /* tells the learner what text the cloud already keeps for this book, so an empty box doesn't look like the text was lost */
-function pbSavedNote(){ var el=$('#pb-saved'); if(!el) return; var m=(PB&&!PB.temp)?PB:(PBLOC||PBMETA), t=m&&m.texts||{}, k=Object.keys(t).filter(function(x){ return t[x]&&typeof t[x].t==='string' }).length, n=(PB&&PB.pages&&PB.pages.length)||(PBLOC&&+PBLOC.n)||(PBMETA&&+PBMETA.n)||0;
-  el.hidden=!k||!(PBLOC||PBMETA||(PB&&(PB.local||PB.cloud))); el.textContent=k?(PBMETA?'☁️ 这台设备和云端':'💾 这台设备')+'已保存 '+k+(n?' / '+n:'')+' 页文字（包括修正过的），继续阅读直接使用，不会再重复识别。':'' }
+function pbSavedNote(){
+  var el=$('#pb-saved'); if(!el) return;
+  var m=(PB&&!PB.temp)?PB:(PBLOC||PBMETA), t=m&&m.texts||{}, keys=Object.keys(t), k=keys.filter(function(x){ return t[x]&&typeof t[x].t==='string'&&t[x].t.trim() }).length;
+  var blanks=keys.filter(function(x){ return pbSavedDone(t[x])&&!String(t[x].t||'').trim() }).length;
+  el.hidden=!(k+blanks)||!(PBLOC||PBMETA||(PB&&(PB.local||PB.cloud)));
+  el.textContent=(PBMETA?'☁️ 这台设备和云端':'💾 这台设备')+'已保存 '+k+' 页文字'+(blanks?'，另有 '+blanks+' 页处理后未检出文字':'')+'。已保存文字会继续使用；未检出页可重新识别。';
+}
 function pbParseTxt(s){ var parts=String(s||'').replace(/\r/g,'').split(/^\s*=+\s*第\s*(\d+)\s*页\s*=+\s*$/m), out={}; for(var i=1;i<parts.length;i+=2){ var k=+parts[i]-1; if(k>=0) out[k]=String(parts[i+1]||'').trim() } return out }
 async function pbUseTxt(file){ var raw=''; try{ raw=await file.text() }catch(e){} return pbUseRaw(raw) }
 async function pbUseRaw(raw){
@@ -4659,7 +4694,7 @@ async function pbUseRaw(raw){
   var tgt=PB?PB.texts:(PBLOC?(PBLOC.texts=(PBLOC.texts&&typeof PBLOC.texts==='object')?PBLOC.texts:{}):(PBMETA?(PBMETA.texts=(PBMETA.texts&&typeof PBMETA.texts==='object')?PBMETA.texts:{}):null));
   if(!tgt){ msg.textContent='先选绘本文件（可以和 .pages.txt 一起选），再导入文字。'; return false }
   var n=PB?PB.pages.length:(PBLOC?(+PBLOC.n||1e9):((PBMETA.kind==='img'&&PBMETA.parts)?PBMETA.parts.length:1e9)), used=0;
-  ks.forEach(function(k){ if(+k<n){ tgt[k]={t:map[k],o:oo}; used++ } });
+  ks.forEach(function(k){ if(+k<n){ tgt[k]={t:map[k],o:oo,source:'manual'}; used++ } });
   if(PB){ PB.pages.forEach(function(pg,i){ if(tgt[i]){ pg.t=tgt[i].t; pg.o=tgt[i].o?1:0; pg.done=1 } }); pbSave(); if(L.pb&&!$('#l-work').hidden) pbShow(PB.i) }
   else { var pk=pbKey();
     if(PBLOC){ try{ PBLOC.t=Date.now(); var lm2=PBLOC; await mTx('readwrite',function(st){ return st.put(lm2,pk+'_m') }) }catch(e){} if(PBMETA) PBMETA.texts=PBLOC.texts }
@@ -4703,7 +4738,7 @@ $('#pb-txtonly').onclick=async function(){
   if(!raw.trim()){ var kb=(PB&&!PB.temp)?PB:(PBLOC||PBMETA); if(kb&&kb.kind==='txt') return pbGo($('#pb-go')); if(PBSRC!=='me') pbSrc('me'); msg.textContent='先在右边粘贴文字，或选一个文字文件。'; return }
   var book=(PB&&!PB.temp)?PB:(PBLOC||PBMETA);
   if(!book||book.kind==='txt'){ pbTDirty=false; if(PB&&PB.temp) PB=null; await pbUseTextOnly(raw,name); return }
-  var map=pbParseTxt(raw); if(!Object.keys(map).length) map={0:raw.trim()}; var oo=/^#\s*已修正/m.test(raw)?1:0, texts={}; Object.keys(map).forEach(function(k){ texts[k]={t:map[k],o:oo} });
+  var map=pbParseTxt(raw); if(!Object.keys(map).length) map={0:raw.trim()}; var oo=/^#\s*已修正/m.test(raw)?1:0, texts={}; Object.keys(map).forEach(function(k){ texts[k]={t:map[k],o:oo,source:'manual'} });
   pbTok++; var b=pbFromTexts(name,texts,0,0); b.temp=1; PB=b; pbStart();
   msg.className='small muted'; msg.textContent='正在只读文字；左边的绘本还保留着，点「继续阅读」就回到绘本。';
 };
@@ -4812,7 +4847,7 @@ function shMatch(txtName){ var b=shNorm(txtName); if(!b) return null; var ex=SH.
 async function pbTxtShelfHit(f){ await shLoad(); var e=shMatch(f.name); return !!e&&e!==shCur() }
 async function pbMultiTxt(files){ await shLoad(); var cur=shCur(), hit=[], miss=[], curRaw=null, msg=$('#pb-tst');
   for(var i=0;i<files.length;i++){ var f=files[i], raw=''; try{ raw=await f.text() }catch(e){ miss.push(f.name); continue } var e=shMatch(f.name);
-    if(!e){ miss.push(f.name); continue } var map=pbParseTxt(raw); if(!Object.keys(map).length&&raw.trim()) map={0:raw.trim()}; var oo=/^#\s*已修正/m.test(raw)?1:0; e.texts=e.texts||{}; Object.keys(map).forEach(function(k){ e.texts[k]={t:map[k],o:oo} }); hit.push(e.name.replace(/\.(pdf|pptx?|pps)$/i,'')+'（'+Object.keys(map).length+' 页）'); if(e===cur) curRaw=raw }
+    if(!e){ miss.push(f.name); continue } var map=pbParseTxt(raw); if(!Object.keys(map).length&&raw.trim()) map={0:raw.trim()}; var oo=/^#\s*已修正/m.test(raw)?1:0; e.texts=e.texts||{}; Object.keys(map).forEach(function(k){ e.texts[k]={t:map[k],o:oo,source:'manual'} }); hit.push(e.name.replace(/\.(pdf|pptx?|pps)$/i,'')+'（'+Object.keys(map).length+' 页）'); if(e===cur) curRaw=raw }
   await shPut(); shUi(); if(curRaw!=null){ try{ await pbUseRaw(curRaw) }catch(e){} }
   msg.textContent=(hit.length?'已放进书架：'+hit.join('、'):'')+(miss.length?(hit.length?'；':'')+'没找到同名绘本：'+miss.join('、')+'（先把绘本选进书架，或改成和绘本一样的文件名）':''); }
 /* ---------- 绘本：提前识别全部页 ---------- */
@@ -4829,18 +4864,18 @@ async function pbBulk(){
   function paint(){
     if(!current()) return;
     var left=total-done; box.hidden=false; $('#pb-bulk-bar').style.width=(total?Math.round(done/total*100):100)+'%';
-    $('#pb-bulk-t').textContent=PBK.stop?'已暂停提前识别（还剩 '+left+' 页）':(left>0?'正在提前识别全部页：'+done+' / '+total+(fail.length?'（'+fail.length+' 页没认出）':''):(fail.length?'识别结束，第 '+fail.map(function(x){return x+1}).join('、')+' 页未识别，请翻到那页点「重新识别」。':'全部 '+n+' 页文字都准备好了'));
+    $('#pb-bulk-t').textContent=(PBK.stop?'已暂停。':left>0?'正在处理 '+done+' / '+total+' 页。':'处理结束。')+pbTextSummary(b,fail);
     $('#pb-bulk-stop').hidden=left<=0; $('#pb-bulk-stop').textContent=PBK.stop?'继续识别':'暂停识别';
   }
   try{
     var todo=[]; for(var q=0;q<order.length;q++){
       var i=order[q]; if(!current()) return; var pg=b.pages[i],sv=b.texts[i];
-      if(sv&&typeof sv.t==='string'){ pg.t=sv.t; pg.o=sv.o?1:0; pg.done=1 }
+      pbUseSaved(b,pg,i);
       if(pg.done) continue;
       if(b.kind==='pdf'&&!pg.img&&pg.t==null){ todo.push(i); continue }
       if(pbNeedOcr(b,pg)) todo.push(i);
     }
-    total=todo.length; if(!total){ box.hidden=true; pbAiStatus('绘本文字已准备好，已识别页面不会重复调用。'); return }
+    total=todo.length; if(!total){ paint(); pbAiStatus(pbTextSummary(b,fail)); return }
     pbAiStatus('正在使用 PaddleOCR 逐页识别绘本…'); paint(); var idx=0;
     async function worker(){
       while(idx<todo.length){
@@ -4864,10 +4899,19 @@ async function pbBulk(){
     await worker();
     if(current()){
       paint(); try{ pbSave(); pbSavedNote() }catch(e){}
-      if(!PBK.stop) pbAiStatus(fail.length?'识别结束：'+fail.length+' 页未识别，请翻到那页点「重新识别」重试。':'绘本识别完成，已保存识别结果。',!!fail.length);
+      if(!PBK.stop) pbAiStatus('处理结束。'+pbTextSummary(b,fail),!!fail.length);
     }
   }finally{ if(run===PBK.run){ PBK.active=false; PBK.book=null } }
 }
+$('#pb-bulk-empty').onclick=function(){
+  var b=PB; if(!b||b.kind==='txt') return;
+  pbAiCancel();
+  b.pages.forEach(function(pg,i){
+    var saved=b.texts[i], raw=String((saved&&typeof saved.t==='string'?saved.t:pg.t)||'').trim();
+    if(!raw&&(!saved||saved.source!=='manual')){ delete b.texts[i]; pg.t=''; pg.done=0 }
+  });
+  pbSrc('ai');
+};
 $('#pb-bulk-stop').onclick=function(){ if(PBK.stop){ pbBulk() } else { PBK.stop=true; this.textContent='继续识别' } };
 /* ---------- 绘本：自动讲故事（读完一页自动翻页，可加讲解） ---------- */
 var PBA={on:false,gen:0,ex:{}};
