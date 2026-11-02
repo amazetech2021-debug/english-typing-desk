@@ -1,4 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<button class="btn primary" id="kokoro-resume" style="position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:6000;box-shadow:0 4px 20px var(--shadow)" hidden>点击播放已准备的语音</button>
 <title>英文跟读打字台 (Copy)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:opsz,wght@7..72,400;7..72,600&family=Noto+Serif+SC:wght@400;600;700;900&display=swap">
 <style>
@@ -1729,7 +1730,7 @@ var EN_TTS={provider:'kokoro',voice:'auto'}, kokoroModule=null, kokoroJob=null, 
 try{ var _en=JSON.parse(LS.getItem('typing-desk-en-tts')||'null'); if(_en&&/^(kokoro|auto|eleven|azure|browser)$/.test(_en.provider)){ EN_TTS.provider=_en.provider; if(/^(auto|af_heart|af_bella|bf_emma)$/.test(_en.voice)) EN_TTS.voice=_en.voice } }catch(e){}
 function enTtsSave(){ try{ LS.setItem('typing-desk-en-tts',JSON.stringify(EN_TTS)) }catch(e){} }
 function enTtsUi(){ ['en-tts-select','en-tts-settings'].forEach(function(id){ var e=$('#'+id); if(e)e.value=EN_TTS.provider }); var row=$('#en-tts-row'); if(row)row.hidden=LANG!=='en'; var v=$('#kokoro-voice'); if(v)v.value=EN_TTS.voice }
-function kokoroStop(){ if(kokoroJob){kokoroJob.abort();kokoroJob=null} if(kokoroUrl){URL.revokeObjectURL(kokoroUrl);kokoroUrl=''} }
+
 function enFallback(text,rate,my,onend,provider){
  if(my!==token)return;
  var ended=false; function done(){if(ended||my!==token)return;ended=true;if(onend)onend()}
@@ -1737,39 +1738,115 @@ function enFallback(text,rate,my,onend,provider){
  else if((provider==='azure'||provider==='auto')&&azOn()) azSay(text,rate,my,done);
  else browserSay(text,rate,my,done);
 }
+// 准备与播放分开：每段最多六句，先完整生成，播放时只读缓存。
+var kokoroBatchJob=null, kokoroPlayer=null, kokoroResume=null, kokoroSessionFallback=false;
+function kokoroVoice(accent){return EN_TTS.voice==='auto'?((accent||ACC)==='uk'?'bf_emma':'af_heart'):EN_TTS.voice}
+function kokoroKey(text,rate,voice){return voice+'|'+rate+'|'+text}
+function kokoroRemember(key,blob){
+ if(blob.size>12*1024*1024)return;
+ kokoroCache.delete(key);kokoroCache.set(key,blob);var bytes=0;kokoroCache.forEach(function(b){bytes+=b.size});
+ while(kokoroCache.size>12||bytes>24*1024*1024){var k=kokoroCache.keys().next().value;bytes-=kokoroCache.get(k).size;kokoroCache.delete(k)}
+}
+function kokoroResumeUi(fn){kokoroResume=fn;var b=$('#kokoro-resume');if(b)b.hidden=!fn}
+function kokoroUnlock(){
+ if(!kokoroPlayer)kokoroPlayer=new Audio();
+ if(navigator.userActivation&& !navigator.userActivation.isActive)return;
+ if(kokoroPlayer.src&& !kokoroPlayer.paused)return;
+ // 在点击事件内解锁同一播放器；后续只更换 src，兼容 iPad 的逐元素授权。
+ kokoroPlayer.onended=kokoroPlayer.onerror=null;
+ kokoroPlayer.src='data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQIAAAAAAA==';
+ var p=kokoroPlayer.play();if(p&&p.catch)p.catch(function(){});
+}
+function kokoroStop(keepBatch){
+ if(!keepBatch&&kokoroBatchJob){kokoroBatchJob.abort();kokoroBatchJob=null}
+ if(kokoroJob){kokoroJob.abort();kokoroJob=null}
+ kokoroResumeUi(null);
+ if(kokoroPlayer){kokoroPlayer.pause();kokoroPlayer.onended=kokoroPlayer.onerror=null}
+ if(kokoroUrl){URL.revokeObjectURL(kokoroUrl);kokoroUrl=''}
+}
+async function kokoroGet(text,rate,voice,signal,onStatus){
+ var key=kokoroKey(text,rate,voice),blob=kokoroCache.get(key);
+ if(blob){kokoroRemember(key,blob);return blob}
+ if(!kokoroModule)kokoroModule=import('./assets/kokoro-tts.mjs?v=buffer-2').catch(function(e){kokoroModule=null;throw e});
+ var mod=await kokoroModule;if(signal.aborted)throw {code:'cancelled'};
+ var result=await mod.synthesize(text,{voice:voice,speed:rate,signal:signal,onStatus:onStatus,loadTimeoutMs:IOSDEV?45000:240000,generationTimeoutMs:IOSDEV?15000:120000});
+ if(signal.aborted)throw {code:'cancelled'};
+ blob=result instanceof Blob?result:result&&result.blob;if(!(blob instanceof Blob)||!blob.size)throw new Error('没有生成音频');
+ kokoroRemember(key,blob);return blob;
+}
+function kokoroFail(text,rate,my,onend){
+ kokoroSessionFallback=true;
+ azNote(IOSDEV?'Kokoro 本次准备未完成，已切换浏览器／系统英文语音；重新选择 Kokoro 可重试。':'Kokoro 本次准备未完成，已使用原有英文备选；重新选择 Kokoro 可重试。');
+ enFallback(text,rate,my,onend,IOSDEV?'browser':'auto');
+}
 function kokoroSay(text,rate,my,onend,accent){
- var voice=EN_TTS.voice==='auto'?((accent||ACC)==='uk'?'bf_emma':'af_heart'):EN_TTS.voice;
- var controller=new AbortController();kokoroJob=controller;
- var lang=LANG,key=voice+'|'+rate+'|'+text,finished=false,ownedUrl='';
+ var voice=kokoroVoice(accent),controller=new AbortController();kokoroJob=controller;
+ var lang=LANG,finished=false,ownedUrl='';
  function valid(){return my===token&&LANG===lang&&!controller.signal.aborted}
- function clean(){if(ownedUrl){URL.revokeObjectURL(ownedUrl);if(kokoroUrl===ownedUrl)kokoroUrl='';ownedUrl=''}if(kokoroJob===controller)kokoroJob=null}
+ function clean(){if(ownedUrl){URL.revokeObjectURL(ownedUrl);if(kokoroUrl===ownedUrl)kokoroUrl='';ownedUrl=''}if(kokoroJob===controller)kokoroJob=null;kokoroResumeUi(null)}
  function done(){if(finished)return;finished=true;clean();if(valid()&&onend)onend()}
  async function run(){
   try{
-   var blob=kokoroCache.get(key);
-   if(!blob){
-    if(!kokoroModule)kokoroModule=import('./assets/kokoro-tts.mjs').catch(function(e){kokoroModule=null;throw e});
-    if(valid())azNote('正在准备 Kokoro 英文语音，首次使用需下载模型…');
-    var mod=await kokoroModule;if(!valid())return;
-    var result=await mod.synthesize(text,{voice:voice,speed:rate,signal:controller.signal,onStatus:function(t){if(valid())azNote(t)}});
-    if(!valid())return;blob=result instanceof Blob?result:result&&result.blob;
-    if(!(blob instanceof Blob)||!blob.size)throw new Error('没有生成音频');
-    if(blob.size<=12*1024*1024){kokoroCache.set(key,blob);var bytes=0;kokoroCache.forEach(function(b){bytes+=b.size});while(kokoroCache.size>12||bytes>24*1024*1024){var oldest=kokoroCache.keys().next().value;bytes-=kokoroCache.get(oldest).size;kokoroCache.delete(oldest)}}
-   }
-   if(!valid())return;azNote('');kokoroUrl=ownedUrl=URL.createObjectURL(blob);var player=audio=new Audio(ownedUrl);player.onended=done;
-   player.onerror=function(){if(finished||!valid())return;finished=true;clean();azNote('Kokoro 音频播放失败，这次使用原有备选语音。');enFallback(text,rate,my,onend,'auto')};
-   try{await player.play()}catch(e){if(finished||!valid())return;finished=true;clean();azNote('浏览器暂未允许播放，请再点击一次播放。')}
-  }catch(e){
+   var blob=await kokoroGet(text,rate,voice,controller.signal,function(t){if(valid())azNote(t)});
    if(!valid())return;
-   if(kokoroJob===controller)kokoroJob=null;
-   azNote('Kokoro 暂时没有读出来，这次使用原有备选语音；可稍后重试。');
-   enFallback(text,rate,my,onend,'auto');
-  }
+   azNote('');kokoroUrl=ownedUrl=URL.createObjectURL(blob);var player=audio=kokoroPlayer||(kokoroPlayer=new Audio());
+   player.pause();player.onended=player.onerror=null;player.src=ownedUrl;player.playbackRate=1;player.onended=done;
+   player.onerror=function(){if(finished||!valid())return;finished=true;clean();kokoroFail(text,rate,my,onend)};
+   function attempt(){
+    if(!valid())return;
+    var p=player.play();if(p&&p.then)p.then(function(){if(valid()){kokoroResumeUi(null);azNote('')}}).catch(function(){if(valid()&&!finished){azNote('语音已准备好，请点击下面按钮播放，不需要重新生成。');kokoroResumeUi(attempt)}});
+   }
+   attempt();
+  }catch(e){if(!valid()||e&&e.code==='cancelled')return;clean();kokoroFail(text,rate,my,onend)}
  }
  run();
 }
-['en-tts-select','en-tts-settings'].forEach(function(id){$('#'+id).onchange=function(){EN_TTS.provider=this.value;enTtsSave();enTtsUi();stopAll();if(typeof loadVoices==='function')loadVoices()}});
-$('#kokoro-voice').onchange=function(){EN_TTS.voice=this.value;enTtsSave();stopAll()};
+function kokoroBlockEnd(list,start){
+ var end=start,words=0;
+ while(end<list.length&&end-start<6){var n=String(list[end]).split(/\s+/).length;if(end>start&&words+n>120)break;words+=n;end++}
+ return end;
+}
+function kokoroBatch(list,rate,onStart,onDone,pause){
+ // 新朗读先停止旧备选声音并使旧回调失效，再解锁当前播放器。
+ ++token;if(synth)synth.cancel();if(audio){audio.pause();audio=null}
+ kokoroStop();kokoroUnlock();var controller=new AbortController();kokoroBatchJob=controller;
+ var lang=LANG,voice=kokoroVoice(),provider=EN_TTS.provider;
+ function valid(){return !controller.signal.aborted&&LANG===lang&&EN_TTS.provider===provider}
+ async function prepare(start,end){
+  for(var k=start;k<end;k++){
+   if(!valid())throw {code:'cancelled'};
+   azNote('正在准备连续朗读：第 '+(start+1)+'–'+end+' 句（'+(k-start)+' / '+(end-start)+' 已准备）…');
+   await kokoroGet(list[k],rate,voice,controller.signal,function(t){if(valid())azNote('准备第 '+(k+1)+' / '+end+' 句：'+t)});
+  }
+ }
+ function playOne(i){return new Promise(function(resolve){
+  if(!valid()){resolve(false);return}
+  kokoroStop(true);var my=++token;onStart(i);if(!valid()){resolve(false);return}
+  var ended=false;function abort(){if(ended)return;ended=true;resolve(false)};controller.signal.addEventListener('abort',abort,{once:true});function done(){if(ended)return;ended=true;controller.signal.removeEventListener('abort',abort);resolve(valid())}
+  if(kokoroSessionFallback)enFallback(list[i],rate,my,done,IOSDEV?'browser':'auto');else kokoroSay(list[i],rate,my,done);
+ })}
+ (async function(){
+  var start=0,ready=null;
+  while(start<list.length&&valid()){
+   var end=kokoroBlockEnd(list,start);
+   if(!kokoroSessionFallback){try{await (ready||prepare(start,end))}catch(e){if(!valid())return;kokoroSessionFallback=true;azNote('本段准备较慢，已使用英文备选继续朗读；可重新选择 Kokoro 重试。')}}
+   if(!valid())return;
+   var next=end<list.length?kokoroBlockEnd(list,end):end;
+   // 下一段在当前段播放期间准备，最多保留当前段与下一段。
+   ready=!kokoroSessionFallback&&end<list.length?prepare(end,next).then(function(){return true},function(e){return {error:e}}):null;
+   for(var i=start;i<end&&valid();i++){
+    if(!await playOne(i))return;
+    if(pause&&i+1<list.length)await new Promise(function(r){setTimeout(r,pause*1000)});
+   }
+   if(ready){var result=await ready;if(result&&result.error){if(!valid())return;kokoroSessionFallback=true;ready=null}else ready=Promise.resolve()}
+   start=end;
+  }
+  if(valid()){kokoroBatchJob=null;if(onDone)onDone()}
+ })().catch(function(e){if(valid()){kokoroBatchJob=null;azNote('连续朗读已停止，请重新播放。')}});
+}
+$('#kokoro-resume').onclick=function(){if(kokoroResume)kokoroResume()};
+['en-tts-select','en-tts-settings'].forEach(function(id){$('#'+id).onchange=function(){EN_TTS.provider=this.value;kokoroSessionFallback=false;enTtsSave();enTtsUi();stopAll();if(typeof loadVoices==='function')loadVoices()}});
+$('#kokoro-voice').onchange=function(){EN_TTS.voice=this.value;kokoroSessionFallback=false;enTtsSave();stopAll()};
 
 function providerSay(url,headers,body,rate,my,onend,kind){
   var key=kind+'|'+(headers['xi-api-key']||headers['X-Api-Key'])+'|'+(kind==='eleven'?CFG.elevenVoice:CFG.doubaoVoice)+'|'+body;
@@ -1952,8 +2029,8 @@ function pickVoice(){
   var mine=voices.filter(function(x){return x.voiceURI===S.voice})[0]; if(mine&&LANG==='en'&&/^en[-_](US|GB)/i.test(mine.lang)&&!accPref().test(mine.lang)){ var alt=autoVoice(); if(alt&&accPref().test(alt.lang)) return alt } return mine||autoVoice();
 }
 function say(text,rate,onend){
-  kokoroStop(); var my=++token; if(synth&&(synth.speaking||synth.pending)) synth.cancel(); if(audio){audio.pause(); audio=null}
-  if(LANG==='en'){ if(EN_TTS.provider==='kokoro'){SAYB=null;kokoroSay(text,rate||S.rate,my,onend)} else enFallback(text,rate||S.rate,my,onend,EN_TTS.provider); }
+  kokoroStop(); if(LANG==='en'&&EN_TTS.provider==='kokoro')kokoroUnlock(); var my=++token; if(synth&&(synth.speaking||synth.pending)) synth.cancel(); if(audio){audio.pause(); audio=null}
+  if(LANG==='en'){ if(EN_TTS.provider==='kokoro'&&!kokoroSessionFallback){SAYB=null;kokoroSay(text,rate||S.rate,my,onend)} else enFallback(text,rate||S.rate,my,onend,EN_TTS.provider==='kokoro'?(IOSDEV?'browser':'auto'):EN_TTS.provider); }
   else if(LANG==='zh'&&CFG.doubaoKey&&!HOSTED) doubaoSay(text,rate||S.rate,my,onend);
   else if(azOn()&&LANG==='en') azSay(text,rate||S.rate,my,onend); else browserSay(text,rate,my,onend);
 }
@@ -1971,6 +2048,7 @@ function browserSay(text,rate,my,onend){
 var sayKeep=[], SAYB=null;
 /* read a list of sentences back to back: with the browser voice they are queued up front, so there is no gap between sentences */
 function sayQueue(list,rate,onStart,onDone){
+  if(LANG==='en'&&EN_TTS.provider==='kokoro'){kokoroBatch(list,rate||S.rate,onStart,onDone,0);return}
   if(LANG==='en'||!synth||azOn()||(LANG==='zh'&&CFG.doubaoKey)){ var chain=token; (function next(i){ if(chain!==token)return; if(i>=list.length){ if(onDone)onDone(); return } onStart(i); say(list[i],rate,function(){var ended=token;Promise.resolve().then(function(){if(ended===token){chain=token;next(i+1)}})});chain=token })(0); return }
   var my=++token; synth.cancel(); if(audio){audio.pause(); audio=null} sayKeep=[]; var v=pickVoice();
   list.forEach(function(t,i){
@@ -1982,6 +2060,7 @@ function sayQueue(list,rate,onStart,onDone){
 }
 function stopAll(){ try{ pbHalt() }catch(e){} token++; kokoroStop(); playing=false; kPlayId=0; if(typeof kMark==='function') kMark(-1); var _ks=$('#k-say'); if(_ks) _ks.textContent='朗读本页'; if(synth) synth.cancel(); if(audio){audio.pause(); audio=null} $('#btn-play').textContent='播放全文'}
 function playFrom(i){
+  if(LANG==='en'&&EN_TTS.provider==='kokoro'&&i<S.sents.length){playing=true;S.cur=i;$('#btn-play').textContent='暂停';kokoroBatch(S.sents.slice(i),S.rate,function(n){S.cur=i+n;markSent(i+n,true);if(!D.read){D.read=true;tabMarks()}},function(){stopAll();markSent(-1)},rdPause());return}
   if(i>=S.sents.length){stopAll(); markSent(-1); return}
   playing=true; S.cur=i; markSent(i,true); if(!D.read){D.read=true; tabMarks()} $('#btn-play').textContent='暂停';
   SAYB=function(ci){ kwMark(i,ci) }; say(S.sents[i],S.rate,function(){ kwMark(i,-1); if(!playing) return; var ps=rdPause(), tk=token; if(ps>0) setTimeout(function(){ if(playing&&token===tk) playFrom(i+1) },ps*1000); else playFrom(i+1) }); SAYB=null;
@@ -4972,7 +5051,7 @@ $('#pb-ex').onchange=function(){ try{ localStorage.setItem('typing-desk-pbexm',t
 function pbExLabel(){ var m=TLZ(); $('#pb-ex').options[1].text='读完加'+m+'讲解'; $('#pb-ex').options[2].text='先'+m+'讲解再读原文' }
 function pbAutoUi(){ var b=$('#pb-auto'); b.textContent=PBA.on?'■ 停止讲故事':'▶ 自动讲故事'; b.classList.toggle('primary',!PBA.on); pbExLabel() }
 function pbAutoOff(){ if(!PBA.on) return; PBA.on=false; PBA.gen++; PBT.done=null; pbAutoUi() }
-function sayTL(text,onend){ kokoroStop(); var my=++token; if(synth&&(synth.speaking||synth.pending)) synth.cancel(); if(audio){ audio.pause(); audio=null } if(!synth||!text){ if(onend) onend(); return }
+function sayTL(text,onend){ kokoroStop(); if(LANG==='en'&&EN_TTS.provider==='kokoro')kokoroUnlock(); var my=++token; if(synth&&(synth.speaking||synth.pending)) synth.cancel(); if(audio){ audio.pause(); audio=null } if(!synth||!text){ if(onend) onend(); return }
   var en=LANG==='zh', re=en?/^en[-_]US/i:/^zh[-_](CN|Hans)/i, re2=en?/^en/i:/^(zh|cmn)/i, good=/Natural|Neural|Premium|Enhanced|Online|Siri|Xiaoxiao|Yunxi|Tingting|Ava|Samantha/i;
   var pool=voices.filter(function(x){ return re.test(x.lang) }); if(!pool.length) pool=voices.filter(function(x){ return re2.test(x.lang) }); pool.sort(function(a,b){ return (good.test(b.name)?1:0)-(good.test(a.name)?1:0) });
   var u=new SpeechSynthesisUtterance(text), v=pool[0]; if(v){ u.voice=v; u.lang=v.lang } else u.lang=en?'en-US':'zh-CN'; u.rate=Math.max(0.8,Math.min(1.2,S.rate||1));
@@ -5241,7 +5320,7 @@ document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.
 $('#rd-mode').onchange=function(){ try{ localStorage.setItem('typing-desk-rmode',this.value) }catch(e){} $('#rd-msg').textContent=''; ipaTried={}; renderReader() };
 accUI();
 /* speak with a chosen accent (pronunciation cards) */
-function sayAcc(text,acc,onend,rate){ if(LANG==='en'&&EN_TTS.provider==='kokoro'){kokoroStop();var kmy=++token;if(synth)synth.cancel();if(audio){audio.pause();audio=null}kokoroSay(text,rate||S.rate,kmy,onend,acc||ACC);return} if(LANG!=='en'||azOn()||!synth||(acc||ACC)===ACC){ say(text,rate||S.rate,onend); return } var re=acc==='uk'?/en[-_]GB/i:/en[-_]US/i, pool=voices.filter(function(v){return re.test(v.lang)}).sort(function(a,b){return msRank(a)-msRank(b)}); var my=++token; synth.cancel(); var u=new SpeechSynthesisUtterance(text); if(pool[0]){ u.voice=pool[0]; u.lang=pool[0].lang } else u.lang=acc==='uk'?'en-GB':'en-US'; u.rate=rate||Math.min(S.rate,0.9); if(onend) u.onend=u.onerror=function(){ if(my===token) onend() }; synth.speak(u) }
+function sayAcc(text,acc,onend,rate){ if(LANG==='en'&&EN_TTS.provider==='kokoro'&&!kokoroSessionFallback){kokoroStop();kokoroUnlock();var kmy=++token;if(synth)synth.cancel();if(audio){audio.pause();audio=null}kokoroSay(text,rate||S.rate,kmy,onend,acc||ACC);return} if(LANG!=='en'||azOn()||!synth||(acc||ACC)===ACC){ say(text,rate||S.rate,onend); return } var re=acc==='uk'?/en[-_]GB/i:/en[-_]US/i, pool=voices.filter(function(v){return re.test(v.lang)}).sort(function(a,b){return msRank(a)-msRank(b)}); var my=++token; synth.cancel(); var u=new SpeechSynthesisUtterance(text); if(pool[0]){ u.voice=pool[0]; u.lang=pool[0].lang } else u.lang=acc==='uk'?'en-GB':'en-US'; u.rate=rate||Math.min(S.rate,0.9); if(onend) u.onend=u.onerror=function(){ if(my===token) onend() }; synth.speak(u) }
 
 /* ---------- reader pause between sentences ---------- */
 function rdPause(){ var v=0; try{ v=+localStorage.getItem('typing-desk-rpause')||0 }catch(e){} return v }
@@ -5698,6 +5777,7 @@ clInit();
 </script>
 
 </body></html>
+
 
 
 
